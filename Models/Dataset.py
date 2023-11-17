@@ -1,75 +1,91 @@
 import os
 import numpy as np
-from PIL import Image
+import librosa
+import librosa.display
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
 
 import torch as tc
 from torch.utils.data import Dataset
 
 class SpectrogramDataset(Dataset):
     """
-    A custom PyTorch dataset for handling spectrogram data.
+    A custom PyTorch dataset for handling audio spectrogram data.
     """
 
-    def __init__(self, paths_to_spectrograms, transform):
+    def __init__(self, paths_to_audio, transform=None, hop_length=512, n_fft=2048, n_mels=128, fmin=0, fmax=None):
         """
         Initializes the dataset.
 
         Args:
-            paths_to_spectrograms (list): List of file paths to spectrogram images.
+            paths_to_audio (list): List of file paths to audio files.
             transform (callable): A function/transform to apply to the spectrogram data.
+            hop_length (int): Number of samples between successive frames.
+            n_fft (int): Number of samples in each window.
+            n_mels (int): Number of mel filterbanks.
+            fmin (float): Minimum frequency.
+            fmax (float): Maximum frequency.
         """
-        self.paths_to_spectrograms = paths_to_spectrograms
+        self.paths_to_audio = paths_to_audio
         self.transform = transform
-        self.patient_spectrograms = {}
-        self.patient_labels = {}
+        self.samples = {}  # Dictionary to store sample information
+        self.hop_length = hop_length
+        self.n_fft = n_fft
+        self.n_mels = n_mels
+        self.fmin = fmin
+        self.fmax = fmax
 
-        # Organize data by patient ID and extract labels
-        for path in paths_to_spectrograms:
-            spec_path, label = path.split(' ')
-            patient_id = os.path.splitext(os.path.basename(spec_path))[0]
-            patient_id = patient_id.split('_')[0]
+        # Extract and store sample information
+        for path in self.paths_to_audio:
+            audio_path, label = path.split(' ')
+            sample_id = os.path.splitext(os.path.basename(audio_path))[0]
+            sample_id = sample_id.split('_')[0]
 
-            if patient_id not in self.patient_labels:
-                self.patient_labels[patient_id] = int(label)
-
-            if patient_id not in self.patient_spectrograms:
-                self.patient_spectrograms[patient_id] = []
-            self.patient_spectrograms[patient_id].append(spec_path)
+            if sample_id not in self.samples:
+                self.samples[sample_id] = {'audio_path': audio_path, 'label': int(label)}
 
     def __len__(self):
         """
-        Returns the number of patients in the dataset.
+        Returns the number of samples in the dataset.
 
         Returns:
-            int: The number of patients.
+            int: The number of samples.
         """
-        return len(self.patient_spectrograms)
+        return len(self.samples)
 
     def __getitem__(self, idx):
         """
         Gets an item (spectrogram and label) from the dataset.
 
         Args:
-            idx (int): Index of the patient in the dataset.
+            idx (int): Index of the sample in the dataset.
 
         Returns:
-            torch.Tensor: Combined spectrogram tensor.
-            int: Patient label.
+            torch.Tensor: Spectrogram tensor.
+            int: Sample label.
         """
-        patient_id = list(self.patient_spectrograms.keys())[idx]
-        spectrogram_paths = self.patient_spectrograms[patient_id]
+        sample_id = list(self.samples.keys())[idx]
+        audio_path = self.samples[sample_id]['audio_path']
 
-        # Load and preprocess spectrograms
-        spectrograms = [Image.open(path).convert('L') for path in spectrogram_paths]  # Convert to grayscale
+        y, sr = librosa.load(audio_path, sr=None)
+
+        mel_spec = librosa.feature.melspectrogram(y=y, sr=sr, hop_length=self.hop_length,
+                                                  n_fft=self.n_fft, n_mels=self.n_mels, fmin=self.fmin, fmax=self.fmax)
+        log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
         if self.transform:
-            spectrograms = [self.transform(img) for img in spectrograms]
+            log_mel_spec_db = self.transform(log_mel_spec_db)
 
-        spectrograms = [tc.tensor(np.array(img), dtype=tc.float32) for img in spectrograms]
-        spectrograms = [img / 255.0 for img in spectrograms]
+        spectrogram = tc.tensor(log_mel_spec_db, dtype=tc.float32)
 
-        combined_spectrogram = tc.stack(spectrograms, dim=0)
+        label = self.samples[sample_id]['label']
 
-        label = self.patient_labels[patient_id]
+        return spectrogram, label
 
-        return combined_spectrogram, label
+if __name__ == '__main__':
+    dataset = SpectrogramDataset(["Data/Vowels/Dysphonie/368_a.wav 1"])
+    spectrogram, label = dataset[0]
+    librosa.display.specshow(spectrogram.numpy(), cmap='plasma')
+    #plt.savefig('spec.jpg')
+    #plt.show()

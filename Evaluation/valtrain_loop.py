@@ -9,7 +9,7 @@ from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, precision_score, recall_score
 
 # Import utility functions and classes from local modules
-from .utilities import (
+from utilities import (
     check_cuda_availability,
     to_device,
     get_files_path,
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     # Check GPU availability
     device = check_cuda_availability()
     # Define the file name containing data paths
-    file_name = 'combined_paths/dataset_HC_u.txt'
+    file_name = 'Data/Lists/Vowels_a_Dysphonie.txt'
 
     # Hyperparameters
     num_epochs = 50
