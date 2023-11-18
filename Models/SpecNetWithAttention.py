@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from .AttentionBlock import SelfAttention
 
+
 class SpecNetWithAttention(nn.Module):
     """
     A PyTorch neural network model with self-attention for processing spectrogram data.
@@ -15,28 +16,30 @@ class SpecNetWithAttention(nn.Module):
         super(SpecNetWithAttention, self).__init__()
 
         # Convolutional layer 1
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=4, 
-                               kernel_size=5, stride=1, padding=2)
+        self.conv1 = nn.Conv2d(
+            in_channels=in_channels, out_channels=4, kernel_size=5, stride=1, padding=2
+        )
         self.batch1 = nn.BatchNorm2d(4)
         self.relu1 = nn.ReLU()
 
         # Max pooling layer 1
         self.pool1 = nn.MaxPool2d(kernel_size=4)
-        
+
         # Convolutional layer 2
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=16, 
-                               kernel_size=5, stride=1, padding=2)
+        self.conv2 = nn.Conv2d(
+            in_channels=4, out_channels=16, kernel_size=5, stride=1, padding=2
+        )
         self.batch2 = nn.BatchNorm2d(16)
         self.relu2 = nn.ReLU()
-        
+
         # Max pooling layer 2
         self.pool2 = nn.MaxPool2d(kernel_size=4)
-       
+
         # Self-attention layer
         self.attention = SelfAttention(14 * 14 * 16)
-        
+
         # Fully connected layer
-        self.fc = nn.Linear(14*14*16, 2)
+        self.fc = nn.Linear(14 * 14 * 16, 2)
 
     def forward(self, x):
         """
@@ -70,5 +73,5 @@ class SpecNetWithAttention(nn.Module):
 
         # Apply sigmoid activation
         x = tc.sigmoid(x)
-        
+
         return x

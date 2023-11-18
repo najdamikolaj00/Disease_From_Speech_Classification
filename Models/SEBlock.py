@@ -5,6 +5,7 @@ Proceedings of the IEEE conference on computer vision and pattern recognition. 2
 
 import torch.nn as nn
 
+
 class SEBlock(nn.Module):
     """
     A PyTorch module for Squeeze-and-Excitation (SE) block.

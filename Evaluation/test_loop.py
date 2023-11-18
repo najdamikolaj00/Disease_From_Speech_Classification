@@ -1,15 +1,18 @@
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
 from sklearn.metrics import f1_score, precision_score, recall_score
 
-from Models.Dataset import SpectrogramDataset
-from .utilities import (
+from Models import SpectrogramDataset, SpecNet, SpecNetWithAttention, SpecNetWithSE
+from Evaluation.utilities import (
     get_patients_id,
     get_files_path,
-    to_device
+    to_device,
+    check_cuda_availability,
 )
+
 
 def test_model(device, file_name, model, criterion):
     # Load test patient IDs and file paths
@@ -60,6 +63,16 @@ def test_model(device, file_name, model, criterion):
     precision = precision_score(all_labels, all_predicted)
     recall = recall_score(all_labels, all_predicted)
 
-    print(f'Test Accuracy: {100 * accuracy:.2f}%')
-    print(f'F1-score: {f1:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}')
-    print(f'Average Test Loss: {average_test_loss:.4f}')
+    print(f"Test Accuracy: {100 * accuracy:.2f}%")
+    print(f"F1-score: {f1:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}")
+    print(f"Average Test Loss: {average_test_loss:.4f}")
+
+
+if __name__ == "__main__":
+    device = check_cuda_availability()
+    # Define the file name containing data paths
+
+    file_name = "Data/Lists/Vowels_a_Dysphonie.txt"
+    model = SpecNet().to(device)
+    criterion = nn.BCELoss()
+    test_model(device, file_name, model, criterion)
