@@ -17,7 +17,9 @@ from utilities import (
     get_patients_id,
     save_results,
 )
-
+import sys
+import os
+sys.path.append(os.getcwd())
 # Import model, dataset, and SEBlock from local modules
 from Models import SpectrogramDataset, SpecNet
 
