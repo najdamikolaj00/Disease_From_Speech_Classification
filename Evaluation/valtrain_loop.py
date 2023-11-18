@@ -15,22 +15,22 @@ from utilities import (
     get_files_path,
     get_patient_id,
     get_patients_id,
-    save_results
+    save_results,
 )
 
 # Import model, dataset, and SEBlock from local modules
-from Models.SpecNet import SpecNet
-from Models.Dataset import SpectrogramDataset
+from Models import SpectrogramDataset, SpecNet
 
-def training_validation(device, file_name, num_epochs, num_splits, batch_size, model, criterion, optimizer):
+
+def training_validation(
+    device, file_name, num_epochs, num_splits, batch_size, model, criterion, optimizer
+):
     # Load patient IDs and file paths from a file
     patients_ids = get_patients_id(file_name)
     file_paths = get_files_path(file_name)
 
     # Define image transformations
-    transform = transforms.Compose([
-        transforms.Resize((224, 224))
-    ])
+    transform = transforms.Compose([transforms.Resize((224, 224))])
 
     # Lists to store training and validation losses
     train_losses = []
@@ -53,8 +53,12 @@ def training_validation(device, file_name, num_epochs, num_splits, batch_size, m
         train_patients = np.array(patients_ids)[train_idx]
         val_patients = np.array(patients_ids)[val_idx]
 
-        train_files = [file for file in file_paths if get_patient_id(file) in train_patients]
-        val_files = [file for file in file_paths if get_patient_id(file) in val_patients]
+        train_files = [
+            file for file in file_paths if get_patient_id(file) in train_patients
+        ]
+        val_files = [
+            file for file in file_paths if get_patient_id(file) in val_patients
+        ]
 
         # Create training and validation datasets and data loaders
         train_dataset = SpectrogramDataset(train_files, transform)
@@ -140,7 +144,9 @@ def training_validation(device, file_name, num_epochs, num_splits, batch_size, m
         precision_2 = precision_score(labels.cpu(), predicted.cpu())
         recall_2 = recall_score(labels.cpu(), predicted.cpu())
 
-        print(f'Fold {fold + 1} Accuracy: {100 * correct / total:.2f}%, F1-score: {f1_2}, Precision: {precision_2}, Recall: {recall_2}')
+        print(
+            f"Fold {fold + 1} Accuracy: {100 * correct / total:.2f}%, F1-score: {f1_2}, Precision: {precision_2}, Recall: {recall_2}"
+        )
 
         acc_scores.append(accuracy)
         f1_scores.append(f1)
@@ -163,25 +169,26 @@ def training_validation(device, file_name, num_epochs, num_splits, batch_size, m
         ("Mean Accuracy", mean_acc, std_acc),
         ("Mean F1 Score", mean_f1, std_f1),
         ("Mean Precision", mean_precision, std_precision),
-        ("Mean Recall", mean_recall, std_recall)
+        ("Mean Recall", mean_recall, std_recall),
     ]
 
-    save_results('output.txt', metrics)
+    save_results("output.txt", metrics)
 
-    print(f'Mean Accuracy: {mean_acc:.2f} (±{std_acc:.2f})')
-    print(f'Mean F1 Score: {mean_f1:.2f} (±{std_f1:.2f})')
-    print(f'Mean Precision: {mean_precision:.2f} (±{std_precision:.2f})')
-    print(f'Mean Recall: {mean_recall:.2f} (±{std_recall:.2f})')
+    print(f"Mean Accuracy: {mean_acc:.2f} (±{std_acc:.2f})")
+    print(f"Mean F1 Score: {mean_f1:.2f} (±{std_f1:.2f})")
+    print(f"Mean Precision: {mean_precision:.2f} (±{std_precision:.2f})")
+    print(f"Mean Recall: {mean_recall:.2f} (±{std_recall:.2f})")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Check GPU availability
     device = check_cuda_availability()
     # Define the file name containing data paths
-    file_name = 'Data/Lists/Vowels_a_Dysphonie.txt'
+    file_name = "Data/Lists/Vowels_a_Dysphonie.txt"
 
     # Hyperparameters
     num_epochs = 50
-    num_splits = 5 
+    num_splits = 5
     batch_size = 32
 
     # Initialize the model, loss criterion, and optimizer
@@ -190,4 +197,13 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Start training and validation
-    training_validation(device, file_name, num_epochs, num_splits, batch_size, model, criterion, optimizer)
+    training_validation(
+        device,
+        file_name,
+        num_epochs,
+        num_splits,
+        batch_size,
+        model,
+        criterion,
+        optimizer,
+    )

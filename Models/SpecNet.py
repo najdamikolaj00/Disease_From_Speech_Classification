@@ -1,35 +1,38 @@
 import torch as tc
 import torch.nn as nn
 
+
 class SpecNet(nn.Module):
     """
     A PyTorch neural network model for processing spectrogram data.
     """
 
-    def __init__(self, in_channels):
+    def __init__(self, in_channels=1):
         """
         Initializes the SpecNet model.
         """
         super(SpecNet, self).__init__()
 
         # Convolutional layer 1
-        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=8, 
-                               kernel_size=3, stride=1, padding=0)
+        self.conv1 = nn.Conv2d(
+            in_channels=in_channels, out_channels=8, kernel_size=3, stride=1, padding=0
+        )
         self.batch1 = nn.BatchNorm2d(8)
         self.relu1 = nn.ReLU()
 
         # Max pooling layer 1
         self.pool1 = nn.MaxPool2d(kernel_size=2)
-        
+
         # Convolutional layer 2
-        self.conv2 = nn.Conv2d(in_channels=8, out_channels=16, 
-                               kernel_size=3, stride=1, padding=0)
+        self.conv2 = nn.Conv2d(
+            in_channels=8, out_channels=16, kernel_size=3, stride=1, padding=0
+        )
         self.batch2 = nn.BatchNorm2d(16)
         self.relu2 = nn.ReLU()
-        
+
         # Max pooling layer 2
         self.pool2 = nn.MaxPool2d(kernel_size=2)
-        
+
         # Fully connected layer
         self.fc = nn.Linear(46656, 2)
 

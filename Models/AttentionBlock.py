@@ -6,6 +6,7 @@ import torch as tc
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class SelfAttention(nn.Module):
     """
     A PyTorch module for self-attention mechanism.
