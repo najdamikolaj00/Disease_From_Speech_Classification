@@ -12,7 +12,8 @@ def check_cuda_availability():
     Checks if a CUDA-compatible GPU is available.
 
     Returns:
-        tc.device: A PyTorch device object set to "cuda" if CUDA is available, or "cpu" if not.
+        tc.device: A PyTorch device object set to "cuda" if CUDA is available,
+        or "cpu" if not.
     """
     return tc.device("cuda" if tc.cuda.is_available() else "cpu")
 
@@ -37,17 +38,18 @@ def to_device(data, device):
 # Function to get file paths from a text file
 def get_files_path(file_name):
     """
-    Reads a text file containing a list of file paths and returns a list of these file paths.
+    Reads a text file containing a list of file paths and returns a list of
+    these file paths.
 
     Args:
         file_name (str): The name of the text file containing file paths.
 
     Returns:
-        list: A list of file paths, with each line of the file as an element in the list.
+        list: A list of file paths, with each line of the file as an element
+        in the list.
     """
     return list(
-        line if line.startswith("Data") else f"Data/{line}"
-        for line in Path(file_name).read_text().splitlines()
+        line for line in Path(file_name).read_text().splitlines()
     )
 
 
@@ -71,7 +73,8 @@ def get_patient_id(file):
 # Function to get a list of unique patient IDs from a text file
 def get_patients_id(file_name):
     """
-    Reads a text file containing file paths and extracts a list of unique patient IDs.
+    Reads a text file containing file paths and extracts a list of unique
+    patient IDs.
 
     Args:
         file_name (str): The name of the text file containing file paths.
@@ -89,7 +92,8 @@ def save_results(output_file, metrics):
 
     Args:
         output_file (str): The name of the output text file.
-        metrics (list of tuples): A list of metric tuples, each containing (metric_name, mean, std).
+        metrics (list of tuples): A list of metric tuples, each containing
+        (metric_name, mean, std).
     """
     Path(output_file).write_text(
         "\n".join(starmap("{}: {:.2f} (±{:.2f})".format, metrics))
