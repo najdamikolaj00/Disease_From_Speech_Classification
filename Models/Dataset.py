@@ -3,7 +3,7 @@ import numpy as np
 import librosa
 import librosa.display
 import matplotlib
-from PIL.Image import Image
+from PIL import Image
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
