@@ -3,6 +3,7 @@ import numpy as np
 import librosa
 import librosa.display
 import matplotlib
+from PIL.Image import Image
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -97,15 +98,24 @@ class SpectrogramDataset(Dataset):
         )
         log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
-        spectrogram = tc.unsqueeze(tc.tensor(log_mel_spec_db, dtype=tc.float32), 0)
+        #pil_img = Image.fromarray(log_mel_spec_db)
+
+        #log_mel_spec_db = np.array(log_mel_spec_db)
 
         if self.transform:
-            spectrogram = self.transform(spectrogram)
+            # spectrogram = tc.tensor(log_mel_spec_db, dtype=tc.float32)
+            # spectrogram = self.transform(spectrogram)
+            pil_img = Image.fromarray(log_mel_spec_db)
 
+            pil_img = self.transform(pil_img)
 
-        label = self.samples[sample_id]["label"]
+            log_mel_spec_db = np.array(pil_img)
 
-        return spectrogram, label
+        #spectrogram = tc.tensor(log_mel_spec_db, dtype=tc.float32)
+
+        label = self.samples[sample_id]['label']
+
+        return log_mel_spec_db, label
 
 
 if __name__ == "__main__":
