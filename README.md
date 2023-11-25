@@ -46,7 +46,7 @@ The primary scientific objective of our project is to develop and optimize a neu
     <li><strong>Functional Dysphonia:</strong> 112 samples</li>
     <li><strong>Hyperfunktionalle Dysphonia:</strong> 212 samples</li>
     <li><strong>Laryngitis:</strong> 140 samples</li>
-    <li><strong>Recurrent Laryngeal Nerve Paresis:</strong> 213 samples</li>
+    <li><strong>Rekurrensparese:</strong> 213 samples</li>
   </ul>
     For this study we have chosen 5 most common pathologies.
 
