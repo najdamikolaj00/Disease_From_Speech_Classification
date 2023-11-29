@@ -3,6 +3,7 @@ import numpy as np
 import librosa
 import librosa.display
 import matplotlib
+from torch import tensor
 
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -98,10 +99,8 @@ class SpectrogramDataset(Dataset):
         log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
 
         spectrogram = tc.unsqueeze(tc.tensor(log_mel_spec_db, dtype=tc.float32), 0)
-
         if self.transform:
             spectrogram = self.transform(spectrogram)
-
 
         label = self.samples[sample_id]["label"]
 
@@ -109,7 +108,7 @@ class SpectrogramDataset(Dataset):
 
 
 if __name__ == "__main__":
-    dataset = SpectrogramDataset(["Data/Vowels/Dysphonie/368_a.wav 1"])
+    dataset = SpectrogramDataset(["Deep_Learing_Course_Winter_2023/Vowels/Dysphonie/368_a.wav 1"])
     spectrogram, label = dataset[0]
     librosa.display.specshow(spectrogram.numpy(), cmap="plasma")
     # plt.savefig('spec.jpg')
