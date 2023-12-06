@@ -1,30 +1,34 @@
 import numpy as np
+import torch
+import torch.nn as nn
 import torchvision.models as models
 from torch import tensor
 from torchvision.models import ResNet18_Weights
-import torch
-import torch.nn as nn
 
 
 def _Window(model, device):
     model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2),
                             padding=(3, 3), bias=False)
     model.fc = nn.Linear(512, 1)
-    window_size = 40
+    model.lstm = nn.LSTM(1, 1)
+    window_size = 35
     window_stride = 10
 
     def wrapper(forward):
         def inner(x):
-            forwarded_samples = []
-            for sample in x:
+            results = torch.empty(len(x))
+            for index, sample in enumerate(x):
+                device = sample.device
+                sample = sample.cpu()
                 for i in range(1, 500):
                     if torch.sum(sample[:, :, -i]) != 0:
                         sample = sample[:, :, :-i]
                         break
-                windows = tensor(tuple(sample[:, :, i:i + window_size].numpy() for i in range(
-                    0, len(sample[0, -1]) - window_size, window_stride)))
-                forward(windows)
-            return tensor(forwarded_samples).unsqueeze(1)
+                windows = tensor(np.array(tuple(sample[:, :, i:i + window_size].numpy() for i in range(
+                    0, len(sample[0, -1]) - window_size, window_stride))))
+                windows = forward(windows.to(device))
+                results[index] = torch.sigmoid(torch.mean(windows))
+            return results.unsqueeze(1).to(device)
 
         return inner
 
