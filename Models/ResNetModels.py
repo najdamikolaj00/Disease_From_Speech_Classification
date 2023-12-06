@@ -6,13 +6,11 @@ from torch import tensor
 from torchvision.models import ResNet18_Weights
 
 
-def _Window(model, device):
+def _Window(model, device, window_size=35, window_stride=10):
     model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2),
                             padding=(3, 3), bias=False)
     model.fc = nn.Linear(512, 1)
     model.lstm = nn.LSTM(1, 1)
-    window_size = 35
-    window_stride = 10
 
     def wrapper(forward):
         def inner(x):
@@ -85,9 +83,9 @@ def Linear(device):
     return _Linear(models.resnet18(), device)
 
 
-def PreWindow(device):
-    return _Window(models.resnet18(weights=ResNet18_Weights.DEFAULT), device)
+def PreWindow(device, window_size=35, window_stride=10):
+    return _Window(models.resnet18(weights=ResNet18_Weights.DEFAULT), device, window_size, window_stride)
 
 
-def Window(device):
-    return _Window(models.resnet18(), device)
+def Window(device, window_size=35, window_stride=10):
+    return _Window(models.resnet18(), device, window_size, window_stride)
