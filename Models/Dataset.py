@@ -1,15 +1,26 @@
 import os
-import numpy as np
+from collections import defaultdict
+from dataclasses import dataclass, field
+from pathlib import Path
+
 import librosa
 import librosa.display
 import matplotlib
+import numpy as np
+import torch
 from PIL import Image
+import torchvision.transforms as transforms
+from torch import Tensor
+from torch.utils.data import Dataset
 
 matplotlib.use("agg")
-import matplotlib.pyplot as plt
 
-import torch as tc
-from torch.utils.data import Dataset
+
+@dataclass
+class Sample:
+    label: int = 0
+    audio_paths: list[Path] = field(default_factory=list)
+    log_mel_spec_dbs: list[Tensor] = field(default_factory=list)
 
 
 class SpectrogramDataset(Dataset):
@@ -41,7 +52,7 @@ class SpectrogramDataset(Dataset):
         """
         self.paths_to_audio = paths_to_audio
         self.transform = transform
-        self.samples = {}  # Dictionary to store sample information
+        self.samples = defaultdict(Sample)  # Dictionary to store sample information
         self.hop_length = hop_length
         self.n_fft = n_fft
         self.n_mels = n_mels
@@ -49,18 +60,13 @@ class SpectrogramDataset(Dataset):
         self.fmax = fmax
 
         # Extract and store sample information
-        for path in self.paths_to_audio:
+        for path in set(self.paths_to_audio):
             audio_path, label = path.split(" ")
             sample_id = os.path.splitext(os.path.basename(audio_path))[0]
             sample_id = sample_id.split("_")[0]
 
-            if sample_id not in self.samples:
-                self.samples[sample_id] = {
-                    "audio_path": audio_path,
-                    "label": int(label),
-                }
-            else:
-                pass
+            self.samples[sample_id].label = int(label)
+            self.samples[sample_id].audio_paths.append(audio_path)
 
     def __len__(self):
         """
@@ -83,39 +89,38 @@ class SpectrogramDataset(Dataset):
             int: Sample label.
         """
         sample_id = list(self.samples.keys())[idx]
-        audio_path = self.samples[sample_id]["audio_path"]
+        audio_paths = self.samples[sample_id].audio_paths
+        for audio_path in sorted(audio_paths):
+            y, sr = librosa.load(audio_path, sr=None)
 
-        y, sr = librosa.load(audio_path, sr=None)
+            mel_spec = librosa.feature.melspectrogram(
+                y=y,
+                sr=sr,
+                hop_length=self.hop_length,
+                n_fft=self.n_fft,
+                n_mels=self.n_mels,
+                fmin=self.fmin,
+                fmax=self.fmax,
+            )
+            log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            min_val = log_mel_spec_db.min()
+            max_val = log_mel_spec_db.max()
+            scaled_img = (log_mel_spec_db - min_val) / (max_val - min_val)
 
-        mel_spec = librosa.feature.melspectrogram(
-            y=y,
-            sr=sr,
-            hop_length=self.hop_length,
-            n_fft=self.n_fft,
-            n_mels=self.n_mels,
-            fmin=self.fmin,
-            fmax=self.fmax,
-        )
-        log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
+            if self.transform:
+                pil_img = Image.fromarray(scaled_img)
 
-        #pil_img = Image.fromarray(log_mel_spec_db)
+                pil_tensor = transforms.ToTensor()(pil_img)
 
-        #log_mel_spec_db = np.array(log_mel_spec_db)
+                pil_tensor = self.transform(pil_tensor)
 
-        if self.transform:
-            # spectrogram = tc.tensor(log_mel_spec_db, dtype=tc.float32)
-            # spectrogram = self.transform(spectrogram)
-            pil_img = Image.fromarray(log_mel_spec_db)
+                log_mel_spec_db = np.array(pil_tensor)
 
-            pil_img = self.transform(pil_img)
+            self.samples[sample_id].log_mel_spec_dbs.append(Tensor(log_mel_spec_db))
 
-            log_mel_spec_db = np.array(pil_img)
+        label = self.samples[sample_id].label
 
-        #spectrogram = tc.tensor(log_mel_spec_db, dtype=tc.float32)
-
-        label = self.samples[sample_id]['label']
-
-        return log_mel_spec_db, label
+        return torch.concat(self.samples[sample_id].log_mel_spec_dbs), label
 
 
 if __name__ == "__main__":

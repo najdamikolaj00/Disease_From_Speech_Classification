@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from sklearn.metrics import f1_score, precision_score, recall_score
 import sys
 import os
+
 sys.path.append(os.getcwd())
 
 from Models import SpectrogramDataset, SpecNet, SpecNetWithAttention, SpecNetWithSE
@@ -23,9 +24,7 @@ def test_model(device, file_name, model, criterion):
     test_files = get_files_path(file_name)
 
     # Define image transformations
-    transform = transforms.Compose([
-        transforms.Resize((224, 224))
-    ])
+    transform = transforms.Compose([transforms.Resize((224, 224))])
 
     # Create test dataset and data loader
     test_dataset = SpectrogramDataset(test_files, transform)
