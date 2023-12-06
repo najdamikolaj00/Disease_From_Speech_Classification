@@ -4,6 +4,9 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
 from sklearn.metrics import f1_score, precision_score, recall_score
+import sys
+import os
+sys.path.append(os.getcwd())
 
 from Models import SpectrogramDataset, SpecNet, SpecNetWithAttention, SpecNetWithSE
 from Evaluation.utilities import (
