@@ -186,7 +186,7 @@ if __name__ == "__main__":
     # Check GPU availability
     device = check_cuda_availability()
     # Define the file name containing data paths
-    file_name = "Data/Lists/Vowels_a_Dysphonie.txt"
+    file_name = "Deep_Learing_Course_Winter_2023/Lists/Vowels_a_Dysphonie.txt"
 
     # Hyperparameters
     num_epochs = 50

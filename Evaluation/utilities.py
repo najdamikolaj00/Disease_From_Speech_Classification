@@ -6,7 +6,6 @@ from pathlib import Path
 import torch as tc
 
 
-# Function to check CUDA availability
 def check_cuda_availability():
     """
     Checks if a CUDA-compatible GPU is available.
@@ -67,7 +66,7 @@ def get_patient_id(file):
     spec_path, label = file.split(" ")
     patient_id = os.path.splitext(os.path.basename(spec_path))[0]
     patient_id = patient_id.split("_")[0]
-    return patient_id
+    return patient_id, label
 
 
 # Function to get a list of unique patient IDs from a text file
