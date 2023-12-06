@@ -53,9 +53,13 @@ def _LSTM(model, device):
     return model
 
 
-def _Linear(model, device):
+def _Linear_single_channel(model, device):
     model.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2),
                             padding=(3, 3), bias=False)
+    return _Linear(model, device)
+
+
+def _Linear(model, device):
     model.fc = nn.Linear(512, 1)
 
     def wrapper(forward):
@@ -78,11 +82,19 @@ def LSTM(device):
 
 
 def PreLinear(device):
-    return _Linear(models.resnet18(weights=ResNet18_Weights.DEFAULT), device)
+    return _Linear_single_channel(models.resnet18(weights=ResNet18_Weights.DEFAULT), device)
 
 
 def Linear(device):
-    return _Linear(models.resnet18(), device)
+    return _Linear_single_channel(models.resnet18(), device)
+
+
+def PreLinearMultichannel(device):
+    return _Linear(models.resnet18(weights=ResNet18_Weights.DEFAULT), device)
+
+
+def LinearMultichannel(device):
+    return _Linear_single_channel(models.resnet18(), device)
 
 
 def PreWindow(device):

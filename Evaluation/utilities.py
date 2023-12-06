@@ -35,20 +35,20 @@ def to_device(data, device):
 
 
 # Function to get file paths from a text file
-def get_files_path(file_name):
+def get_files_path(file_path: Path):
     """
     Reads a text file containing a list of file paths and returns a list of
     these file paths.
 
     Args:
-        file_name (str): The name of the text file containing file paths.
+        file_path (Path): The path to the text file containing file paths.
 
     Returns:
         list: A list of file paths, with each line of the file as an element
         in the list.
     """
     return list(
-        line for line in Path(file_name).read_text().splitlines()
+        line for line in file_path.read_text().splitlines()
     )
 
 
@@ -70,18 +70,18 @@ def get_patient_id(file):
 
 
 # Function to get a list of unique patient IDs from a text file
-def get_patients_id(file_name):
+def get_patients_id(file_path: Path):
     """
     Reads a text file containing file paths and extracts a list of unique
     patient IDs.
 
     Args:
-        file_name (str): The name of the text file containing file paths.
+        file_path (Path): The path to the text file containing file paths.
 
     Returns:
         list: A list of unique patient IDs.
     """
-    return list(set(map(get_patient_id, Path(file_name).read_text().splitlines())))
+    return list(set(map(get_patient_id, file_path.read_text().splitlines())))
 
 
 # Function to save results to a text file

@@ -3,7 +3,6 @@ from itertools import count, chain
 from pathlib import Path
 from typing import Literal
 
-import torch
 import torch.optim as optim
 import torchaudio.transforms as T
 import torchvision.transforms as transforms
@@ -18,6 +17,7 @@ from Models import SpectrogramDataset
 from Models.ResNetModels import *
 
 root_path = Path('Deep_Learing_Course_Winter_2023')
+data_path = root_path / 'Data'
 session_time = datetime.now().strftime("%Y%m%d%H%M")
 results_folder = root_path.joinpath(f'results/{session_time}')
 results_folder.mkdir(exist_ok=True, parents=True)
@@ -27,13 +27,13 @@ writer = SummaryWriter(str(summary_folder))
 
 
 def training_validation(
-    device, file_name, num_splits, batch_size, early_stopping_patience: int, criterion,
-    model_type: Literal['PreLinear', "Linear", "LSTM", 'PreLSTM', 'PreWindow'],
-    augmentation_type='no_augmentation', random_state=42
+    device, file_path: Path, num_splits, batch_size, early_stopping_patience: int, criterion,
+    model_type: Literal['PreLinear', "Linear", "LSTM", 'PreLSTM', 'PreWindow', 'PreLinearMultichannel', 'LinearMultichannel'],
+    augmentation='no_augmentation', random_state=42
 ):
     # Load patient IDs and file paths from a file
-    patients_ids = get_patients_id(file_name)
-    file_paths = get_files_path(file_name)
+    patients_ids = get_patients_id(file_path)
+    file_paths = get_files_path(file_path)
 
     # Define augmentations
     transform_no_augmentation = transforms.Compose([
@@ -66,13 +66,13 @@ def training_validation(
     ])
 
     # Choose the desired augmentation
-    if augmentation_type == 'frequency_masking':
+    if augmentation == 'frequency_masking':
         transform = transform_frequency_masking
-    elif augmentation_type == 'time_masking':
+    elif augmentation == 'time_masking':
         transform = transform_time_masking
-    elif augmentation_type == 'combined_masking':
+    elif augmentation == 'combined_masking':
         transform = transform_combined_masking
-    elif augmentation_type == 'pad_zeros':
+    elif augmentation == 'pad_zeros':
         transform = transform_pad_zeros
     else:
         transform = transform_no_augmentation
@@ -94,10 +94,10 @@ def training_validation(
         val_patients = np.array(patients_ids)[val_idx]
 
         train_files = list(
-            chain.from_iterable([file] if file.endswith('0') else 4*[file] for file in file_paths if get_patient_id(file)[0] in train_patients[:, 0])
+            chain.from_iterable([f'{data_path}/{file}'] if file.endswith('0') else 4*[f'{data_path}/{file}'] for file in file_paths if get_patient_id(file)[0] in train_patients[:, 0])
         )
         val_files = [
-            file for file in file_paths if get_patient_id(file)[0] in val_patients[:, 0]
+            f'{data_path}/{file}' for file in file_paths if get_patient_id(file)[0] in val_patients[:, 0]
         ]
 
         train_dataset = SpectrogramDataset(train_files, transform)
@@ -190,7 +190,7 @@ def training_validation(
 if __name__ == '__main__':
     device = check_cuda_availability()
     disease = 'Rekurrensparese'
-    file_name = f'Deep_Learing_Course_Winter_2023/Data/Lists/Lists_PC/Vowels_a_{disease}.txt'
+    file_path = data_path / f'Lists/Lists_PC/Vowels_a_{disease}.txt'
 
     # Hyperparameters
     num_splits = 5
@@ -210,12 +210,12 @@ if __name__ == '__main__':
         for random_state in (7, 69, 420, 2137):
             output_models += list(training_validation(
                 device,
-                file_name,
+                file_path,
                 num_splits,
                 batch_size,
                 early_stopping_patience,
                 criterion,
-                'PreWindow',
-                augmentation_type=augmentation_type,
+                'PreLinear',
+                augmentation=augmentation_type,
             ))
             writer.flush()
