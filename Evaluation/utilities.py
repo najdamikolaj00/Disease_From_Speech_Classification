@@ -47,9 +47,7 @@ def get_files_path(file_path: Path):
         list: A list of file paths, with each line of the file as an element
         in the list.
     """
-    return list(
-        line for line in file_path.read_text().splitlines()
-    )
+    return list(line for line in file_path.read_text().splitlines())
 
 
 # Function to extract patient ID from a file path

@@ -105,7 +105,7 @@ class SpectrogramDataset(Dataset):
             log_mel_spec_db = librosa.power_to_db(mel_spec, ref=np.max)
             min_val = log_mel_spec_db.min()
             max_val = log_mel_spec_db.max()
-            scaled_img = ((log_mel_spec_db - min_val) / (max_val - min_val))
+            scaled_img = (log_mel_spec_db - min_val) / (max_val - min_val)
 
             if self.transform:
                 pil_img = Image.fromarray(scaled_img)
@@ -117,7 +117,6 @@ class SpectrogramDataset(Dataset):
                 log_mel_spec_db = np.array(pil_tensor)
 
             self.samples[sample_id].log_mel_spec_dbs.append(Tensor(log_mel_spec_db))
-
 
         label = self.samples[sample_id].label
 
