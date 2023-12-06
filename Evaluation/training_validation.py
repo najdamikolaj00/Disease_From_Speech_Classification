@@ -1,5 +1,5 @@
 from datetime import datetime
-from itertools import count, chain
+from itertools import count, chain, product
 from pathlib import Path
 from typing import Literal
 
@@ -28,8 +28,8 @@ writer = SummaryWriter(str(summary_folder))
 
 def training_validation(
     device, file_name, num_splits, batch_size, early_stopping_patience: int, criterion,
-    model_type: Literal['PreLinear', "Linear", "LSTM", 'PreLSTM', 'PreWindow'],
-    augmentation_type='no_augmentation', random_state=42
+    model_type: Literal['PreLinear', "Linear", "LSTM", 'PreLSTM', 'PreWindow', 'Window'],
+    augmentation_type='no_augmentation', tun_window_size=35, tun_window_stride=10, random_state=42
 ):
     # Load patient IDs and file paths from a file
     patients_ids = get_patients_id(file_name)
@@ -84,7 +84,12 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        model = globals()[model_type](device)
+        if model_type == 'PreWindow' or model_type == 'Window':
+            model = globals()[model_type](device, window_size=tun_window_size, 
+                                          window_stride=tun_window_stride)
+        else:
+            model = globals()[model_type](device)
+
         optimizer = optim.Adam(model.parameters(), lr=0.001)
 
         print(f"Fold {fold + 1}/{num_splits}")
@@ -195,19 +200,40 @@ if __name__ == '__main__':
     # Hyperparameters
     num_splits = 5
     early_stopping_patience = 5
-    batch_size = 32
+    batch_size_candidates = [16, 32, 64]
+    window_length_candidates = [20, 30, 40]
+    window_stride_candidates = [5, 10, 15]
 
     criterion = nn.BCELoss()
+
+    #Set up the model type:
+    model_type = 'PreWindow'
+
     # Start training and validation
     output_models = []
-    for augmentation_type in (
-        # 'pad_zeros',
-        # 'frequency_masking',
+
+    augmentation_types = [
+        'pad_zeros',
+        'frequency_masking',
         'time_masking',
-        # 'combined_masking',
-        # 'no_augmentation'
-    ):
-        for random_state in (7, 69, 420, 2137):
+        'combined_masking',
+        'no_augmentation'
+    ]
+
+    random_states = (7, 69, 420, 2137)
+
+    hyperparameter_combinations = product(augmentation_types, batch_size_candidates)
+
+    if 'Window' in model_type:
+        hyperparameter_combinations = product(
+            hyperparameter_combinations,
+            window_length_candidates,
+            window_stride_candidates
+        )
+
+    for hyperparameters in hyperparameter_combinations:
+        if 'Window' in model_type:
+            augmentation_type, random_state, batch_size, window_length, window_stride = hyperparameters
             output_models += list(training_validation(
                 device,
                 file_name,
@@ -215,7 +241,22 @@ if __name__ == '__main__':
                 batch_size,
                 early_stopping_patience,
                 criterion,
-                'PreWindow',
+                model_type,
+                augmentation_type=augmentation_type,
+                tun_window_size=window_length,
+                tun_window_stride=window_stride,
+            ))
+        else:
+            augmentation_type, random_state, batch_size = hyperparameters
+            output_models += list(training_validation(
+                device,
+                file_name,
+                num_splits,
+                batch_size,
+                early_stopping_patience,
+                criterion,
+                model_type,
                 augmentation_type=augmentation_type,
             ))
-            writer.flush()
+
+        writer.flush()
