@@ -2,11 +2,13 @@ from datetime import datetime
 from itertools import count, chain, product
 from pathlib import Path
 
+import torch
 import torch.optim as optim
 import torchaudio.transforms as T
 import torchvision.transforms as transforms
 from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
+from torch import nn
 from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -20,8 +22,8 @@ from Evaluation.utilities import (
     check_cuda_availability,
 )
 from Models import SpectrogramDataset
-from Models.ResNetModels import *
-from Models.ResNetModels import spec_models
+from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
+import numpy as np
 
 root_path = Path(".")
 data_path = root_path / "Data"
@@ -248,7 +250,9 @@ if __name__ == "__main__":
     criterion = nn.BCELoss()
 
     # Set up the model type:
-    model_type = spec_models["PretrainedWindowLinearModel"]
+    model_type = spec_models[
+        get_module_name("ResNet18", "Linear", "Pretrained", "Window", "MultiChannel")
+    ]
 
     # Start training and validation
     output_models = []
