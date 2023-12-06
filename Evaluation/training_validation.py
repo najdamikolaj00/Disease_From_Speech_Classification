@@ -233,7 +233,7 @@ if __name__ == '__main__':
 
     for hyperparameters in hyperparameter_combinations:
         if 'Window' in model_type:
-            augmentation_type, random_state, batch_size, window_length, window_stride = hyperparameters
+            augmentation_type, batch_size, window_length, window_stride = hyperparameters
             output_models += list(training_validation(
                 device,
                 file_name,
@@ -247,7 +247,7 @@ if __name__ == '__main__':
                 tun_window_stride=window_stride,
             ))
         else:
-            augmentation_type, random_state, batch_size = hyperparameters
+            augmentation_type, batch_size = hyperparameters
             output_models += list(training_validation(
                 device,
                 file_name,
