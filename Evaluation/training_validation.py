@@ -28,9 +28,9 @@ import numpy as np
 root_path = Path(".")
 data_path = root_path / "Data"
 session_time = datetime.now().strftime("%Y%m%d%H%M")
-results_folder = root_path.joinpath(f"results/{session_time}")
+results_folder = data_path.joinpath(f"results/{session_time}")
 results_folder.mkdir(exist_ok=True, parents=True)
-summary_folder = root_path.joinpath(f"summaries/{session_time}")
+summary_folder = data_path.joinpath(f"summaries/{session_time}")
 summary_folder.mkdir(exist_ok=True, parents=True)
 writer = SummaryWriter(str(summary_folder))
 
@@ -213,7 +213,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"test-model_{disease}_{best_epoch}_{num_splits}_{batch_size}.pth"
+                            f"f1_{f1}_{model_type.__name__}_{disease}_.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
