@@ -18,8 +18,8 @@ class LastLayer(Enum):
 
 
 class ModelKernel(Enum):
-    Window = "Window"
     Continuous = "Continuous"
+    Window = "Window"
 
 
 class InputChannels(Enum):
