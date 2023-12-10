@@ -22,7 +22,8 @@ from Evaluation.utilities import (
     check_cuda_availability,
 )
 from Models import SpectrogramDataset
-from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
+#from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
+from Models.SpecNetModels import spec_models, get_module_name, WindowModel, SpecModel
 import numpy as np
 
 root_path = Path(".")
@@ -250,8 +251,14 @@ if __name__ == "__main__":
     criterion = nn.BCELoss()
 
     # Set up the model type:
+    #ResNet18
+    # model_type = spec_models[
+    #     get_module_name("ResNet18", "Linear", "Pretrained", "Window", "MultiChannel")
+    # ]
+
+    #SpecNet
     model_type = spec_models[
-        get_module_name("ResNet18", "Linear", "Pretrained", "Window", "MultiChannel")
+        get_module_name("SpecNetWithSE", "Linear",  "Continuous")
     ]
 
     # Start training and validation
