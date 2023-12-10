@@ -67,8 +67,6 @@ class SpecNet(nn.Module):
         x = x.view(x.size(0), -1)
 
         x = self.fc(x)
-
-        x = torch.sigmoid(x)
         return x
 
 """
@@ -191,13 +189,15 @@ class SpecNetWithSE(nn.Module):
         x = self.se_block2(x)
 
         x = self.pool2(x)
-
+        print(x.shape)
         x = x.view(x.size(0), -1)
+        print("x shape: ", x.shape)
+        print("fc shape: ", self.fc)
         x = self.fc(x)
 
         return x
 
-class SpecModelSpec:
+class SpecModel:
     model: nn.Module
 
     @classmethod
@@ -212,7 +212,7 @@ class SpecModelSpec:
         model = cls.model.to(device)
         return model
     
-class WindowModelSpec(SpecModelSpec):
+class WindowModel(SpecModel):
     @classmethod
     def get_model(cls, device, window_size=35, window_stride=10):
         def wrapper(forward):
@@ -245,27 +245,26 @@ class WindowModelSpec(SpecModelSpec):
         model = cls.model.to(device)
         return model
 
-def get_module_name_specnet(
+def get_module_name(
     base_model: Literal["SpecNet", "SpecNetWithSE"],
     model_type: Literal["LSTM", "Linear"],
     window: Literal["Window", "Continuous"],
-    single_channel: Literal["SingleChannel"],
 ):
-    return single_channel + window + model_type + base_model + "BasedModel"
+    return window + model_type + base_model + "BasedModel"
 
 
-spec_models_specnet: dict[str, SpecModelSpec] = {}
-for base_model, model_type, window, single_channel in product(
+spec_models: dict[str, SpecModel] = {}
+for base_model, model_type, window in product(
     ("SpecNet", "SpecNetWithSE"),
     ("LSTM", "Linear"),
     ("Window", "Continuous")
 ):
-    model_name = get_module_name_specnet(
-        base_model, model_type, window, single_channel
+    model_name = get_module_name(
+        base_model, model_type, window
     )
 
-    locals()[model_name]: SpecModelSpec = type(
-        model_name, (WindowModelSpec if window == "Window" else SpecModelSpec,), {}
+    locals()[model_name]: SpecModel = type(
+        model_name, (WindowModel if window == "Window" else SpecModel,), {}
     )
     if base_model == "SpecNet":
         locals()[model_name].model = SpecNet()
@@ -273,8 +272,8 @@ for base_model, model_type, window, single_channel in product(
         locals()[model_name].model = SpecNetWithSE()
 
     if model_type == "Linear":
-        locals()[model_name].model.fc = nn.Linear(46656, 1)
+        locals()[model_name].model.fc = nn.Linear(59040, 1)
     elif model_type == "LSTM":
-        locals()[model_name].model.fc = nn.LSTM(46656, 1)
+        locals()[model_name].model.fc = nn.LSTM(59040, 1)
 
-    spec_models_specnet[model_name] = locals()[model_name]
+    spec_models[model_name] = locals()[model_name]

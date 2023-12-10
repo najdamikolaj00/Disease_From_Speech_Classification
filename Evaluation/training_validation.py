@@ -1,6 +1,8 @@
 from datetime import datetime
 from itertools import count, chain, product
 from pathlib import Path
+import sys
+sys.path.insert(0, 'D:/Disease_From_Speech_Classification/Models')
 
 import torch
 import torch.optim as optim
@@ -14,16 +16,16 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from Evaluation.utilities import (
+from utilities import (
     get_patients_id,
     get_files_path,
     get_patient_id,
     to_device,
     check_cuda_availability,
 )
-from Models import SpectrogramDataset
+from Dataset import SpectrogramDataset
 #from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
-from Models.SpecNetModels import spec_models, get_module_name, WindowModel, SpecModel
+from SpecNetModels import spec_models, get_module_name, WindowModel, SpecModel
 import numpy as np
 
 root_path = Path(".")
@@ -238,15 +240,19 @@ def training_validation(
 
 if __name__ == "__main__":
     device = check_cuda_availability()
+    print(device)
     disease = "Rekurrensparese"
-    file_path = data_path / f"Lists/Vowels_all_{disease}.txt"
+    file_path = data_path / f"Lists/Lists_PC/Vowels_a_{disease}.txt"
 
     # Hyperparameters
     num_splits = 5
     early_stopping_patience = 5
-    batch_size_candidates = [16, 32, 64]
-    window_length_candidates = [20, 30, 40]
-    window_stride_candidates = [5, 10, 15]
+    # batch_size_candidates = [16, 32, 64]
+    # window_length_candidates = [20, 30, 40]
+    # window_stride_candidates = [5, 10, 15]
+    batch_size_candidates = [16]
+    window_length_candidates = [20]
+    window_stride_candidates = [5]
 
     criterion = nn.BCELoss()
 

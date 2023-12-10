@@ -123,9 +123,9 @@ class SpectrogramDataset(Dataset):
         return torch.concat(self.samples[sample_id].log_mel_spec_dbs), label
 
 
-if __name__ == "__main__":
-    dataset = SpectrogramDataset(["Data/Vowels/Dysphonie/368_a.wav 1"])
-    spectrogram, label = dataset[0]
-    librosa.display.specshow(spectrogram.numpy(), cmap="plasma")
-    # plt.savefig('spec.jpg')
-    # plt.show()
+# if __name__ == "__main__":
+#     dataset = SpectrogramDataset(["Data/Vowels/Dysphonie/368_a.wav 1"])
+#     spectrogram, label = dataset[0]
+#     librosa.display.specshow(spectrogram.numpy(), cmap="plasma")
+#     # plt.savefig('spec.jpg')
+#     # plt.show()
