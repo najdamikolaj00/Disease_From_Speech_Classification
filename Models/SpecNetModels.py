@@ -1,11 +1,5 @@
-from typing import Literal
-from itertools import product
-
-import numpy as np
-
 import torch
 import torch.nn as nn
-from torch import tensor
 
 
 class SpecNet(nn.Module):
@@ -71,10 +65,12 @@ class SpecNet(nn.Module):
         x = torch.sigmoid(x)
         return x
 
+
 """
 Hu, Jie, Li Shen, and Gang Sun. "Squeeze-and-excitation networks." 
 Proceedings of the IEEE conference on computer vision and pattern recognition. 2018.
 """
+
 
 class SEBlock(nn.Module):
     """
@@ -120,6 +116,7 @@ class SEBlock(nn.Module):
         # Reshape and apply SE scaling
         y = y.view(batch_size, num_channels, 1, 1)
         return x * y
+
 
 class SpecNetWithSE(nn.Module):
     """
@@ -196,86 +193,3 @@ class SpecNetWithSE(nn.Module):
         x = self.fc(x)
 
         return x
-
-class SpecModelSpec:
-    model: nn.Module
-
-    @classmethod
-    def get_model(cls, device):
-        def wrapper(forward):
-            def inner(x):
-                return torch.sigmoid(forward(x))
-
-            return inner
-
-        cls.model.forward = wrapper(cls.model.forward)
-        model = cls.model.to(device)
-        return model
-    
-class WindowModelSpec(SpecModelSpec):
-    @classmethod
-    def get_model(cls, device, window_size=35, window_stride=10):
-        def wrapper(forward):
-            def inner(x):
-                results = torch.empty(len(x))
-                device = x.device
-                for index, sample in enumerate(x):
-                    sample = sample.cpu()
-                    for i in range(1, 500):
-                        if torch.sum(sample[:, :, -i]) != 0:
-                            sample = sample[:, :, :-i]
-                            break
-                    windows = tensor(
-                        np.array(
-                            tuple(
-                                sample[:, :, i : i + window_size].numpy()
-                                for i in range(
-                                    0, len(sample[0, -1]) - window_size, window_stride
-                                )
-                            )
-                        )
-                    )
-                    windows = forward(windows.to(device))
-                    results[index] = torch.sigmoid(torch.mean(windows))
-                return results.unsqueeze(1).to(device)
-
-            return inner
-
-        cls.model.forward = wrapper(cls.model.forward)
-        model = cls.model.to(device)
-        return model
-
-def get_module_name_specnet(
-    base_model: Literal["SpecNet", "SpecNetWithSE"],
-    model_type: Literal["LSTM", "Linear"],
-    window: Literal["Window", "Continuous"],
-    single_channel: Literal["SingleChannel"],
-):
-    return single_channel + window + model_type + base_model + "BasedModel"
-
-
-spec_models_specnet: dict[str, SpecModelSpec] = {}
-for base_model, model_type, window, single_channel in product(
-    ("SpecNet", "SpecNetWithSE"),
-    ("LSTM", "Linear"),
-    ("Window", "Continuous"),
-    ("SingleChannel", "MultiChannel")
-):
-    model_name = get_module_name_specnet(
-        base_model, model_type, window, single_channel
-    )
-
-    locals()[model_name]: SpecModelSpec = type(
-        model_name, (WindowModelSpec if window == "Window" else SpecModelSpec,), {}
-    )
-    if base_model == "SpecNet":
-        locals()[model_name].model = SpecNet()
-    elif base_model == "SpecNetWithSE":
-        locals()[model_name].model = SpecNetWithSE()
-
-    if model_type == "Linear":
-        locals()[model_name].model.fc = nn.Linear(59040, 1)
-    elif model_type == "LSTM":
-        locals()[model_name].model.fc = nn.LSTM(59040, 1)
-
-    spec_models_specnet[model_name] = locals()[model_name]

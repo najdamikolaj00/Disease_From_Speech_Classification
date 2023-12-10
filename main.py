@@ -1,10 +1,10 @@
 from itertools import product
 
 from torch import nn
-
+from Models.ModelOptions import BaseModel, LastLayer, ModelKernel, InputChannels, TrainingOption
 from Evaluation.training_validation import training_validation
 from Evaluation.utilities import check_cuda_availability
-from Models.SpecNetModels import spec_models_specnet, get_module_name_specnet, WindowModelSpec
+from Models.Models import get_model_type, WindowModel
 from config import data_path, writer
 
 if __name__ == "__main__":
@@ -15,9 +15,21 @@ if __name__ == "__main__":
     # Hyperparameters
     num_splits = 5
     early_stopping_patience = 5
-    batch_size_candidates = [16, 32, 64]
-    window_length_candidates = [20, 30, 40]
-    window_stride_candidates = [5, 10, 15]
+    batch_size_candidates = [
+        ("batch_size", 16),
+        # ("batch_size", 32),
+        # ("batch_size", 64),
+    ]
+    window_length_candidates = [
+        ("window_length", 20),
+        ("window_length", 30),
+        ("window_length", 40),
+    ]
+    window_stride_candidates = [
+        ("window_stride", 5),
+        ("window_stride", 10),
+        ("window_stride", 15),
+    ]
 
     criterion = nn.BCELoss()
 
@@ -28,68 +40,48 @@ if __name__ == "__main__":
     # ]
 
     # SpecNet
-    model_type = spec_models_specnet[
-        get_module_name_specnet("SpecNetWithSE", "Linear", "Continuous", "SingleChannel")
-    ]
+    model_type = get_model_type(BaseModel.ResNet18, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Continuous,
+                                InputChannels.SingleChannel)
 
     # Start training and validation
     output_models = []
 
     augmentation_types = [
-        "pad_zeros",
-        "frequency_masking",
-        "time_masking",
-        "combined_masking",
-        "no_augmentation",
+        ("augmentation", "pad_zeros"),
+        ("augmentation", "frequency_masking"),
+        ("augmentation", "time_masking"),
+        ("augmentation", "combined_masking"),
+        ("augmentation", "no_augmentation"),
     ]
 
     random_states = (7, 69, 420, 2137)
 
     hyperparameter_combinations = product(augmentation_types, batch_size_candidates)
 
-    if isinstance(model_type, WindowModelSpec):
+    if isinstance(model_type, WindowModel):
         hyperparameter_combinations = product(
             augmentation_types,
             batch_size_candidates,
             window_length_candidates,
             window_stride_candidates,
         )
+    else:
+        hyperparameter_combinations = product(
+            augmentation_types,
+            batch_size_candidates,
+        )
 
     for hyperparameters in hyperparameter_combinations:
-        if isinstance(model_type, WindowModelSpec):
-            (
-                augmentation_type,
-                batch_size,
-                window_length,
-                window_stride,
-            ) = hyperparameters
-            output_models += list(
-                training_validation(
-                    device,
-                    file_path,
-                    num_splits,
-                    batch_size,
-                    early_stopping_patience,
-                    criterion,
-                    model_type,
-                    augmentation=augmentation_type,
-                    tun_window_size=window_length,
-                    tun_window_stride=window_stride,
-                )
+        output_models += list(
+            training_validation(
+                device=device,
+                file_path=file_path,
+                num_splits=num_splits,
+                early_stopping_patience=early_stopping_patience,
+                criterion=criterion,
+                model_type=model_type,
+                **dict(hyperparameters)
             )
-        else:
-            augmentation_type, batch_size = hyperparameters
-            output_models += list(
-                training_validation(
-                    device,
-                    file_path,
-                    num_splits,
-                    batch_size,
-                    early_stopping_patience,
-                    criterion,
-                    model_type,
-                    augmentation=augmentation_type,
-                )
-            )
+        )
 
         writer.flush()
