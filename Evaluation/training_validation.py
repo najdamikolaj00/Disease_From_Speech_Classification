@@ -1,17 +1,15 @@
-from datetime import datetime
-from itertools import count, chain, product
+from itertools import count, chain
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.optim as optim
 import torchaudio.transforms as T
 import torchvision.transforms as transforms
 from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
-from torch import nn
 from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from Evaluation.utilities import (
@@ -19,21 +17,11 @@ from Evaluation.utilities import (
     get_files_path,
     get_patient_id,
     to_device,
-    check_cuda_availability,
 )
 from Models import SpectrogramDataset
-#from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
-from Models.SpecNetModels import spec_models, get_module_name, WindowModel, SpecModel
-import numpy as np
-
-root_path = Path(".")
-data_path = root_path / "Data"
-session_time = datetime.now().strftime("%Y%m%d%H%M")
-results_folder = data_path.joinpath(f"results/{session_time}")
-results_folder.mkdir(exist_ok=True, parents=True)
-summary_folder = data_path.joinpath(f"summaries/{session_time}")
-summary_folder.mkdir(exist_ok=True, parents=True)
-writer = SummaryWriter(str(summary_folder))
+# from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
+from Models.SpecNetModels import WindowModelSpec, SpecModelSpec
+from config import data_path, writer, results_folder
 
 
 def training_validation(
@@ -43,7 +31,7 @@ def training_validation(
     batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model_type: SpecModel,
+    model_type: SpecModelSpec,
     augmentation="no_augmentation",
     tun_window_size=35,
     tun_window_stride=10,
@@ -88,6 +76,7 @@ def training_validation(
     )
 
     # Choose the desired augmentation
+    val_transform = transform_no_augmentation
     if augmentation == "frequency_masking":
         transform = transform_frequency_masking
     elif augmentation == "time_masking":
@@ -96,6 +85,7 @@ def training_validation(
         transform = transform_combined_masking
     elif augmentation == "pad_zeros":
         transform = transform_pad_zeros
+        val_transform = transform_pad_zeros
     else:
         transform = transform_no_augmentation
 
@@ -108,7 +98,7 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        if isinstance(model_type, WindowModel):
+        if isinstance(model_type, WindowModelSpec):
             model = model_type.get_model(
                 device, window_size=tun_window_size, window_stride=tun_window_stride
             )
@@ -139,7 +129,7 @@ def training_validation(
         ]
 
         train_dataset = SpectrogramDataset(train_files, transform)
-        val_dataset = SpectrogramDataset(val_files, transform_no_augmentation)
+        val_dataset = SpectrogramDataset(val_files, val_transform)
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -155,7 +145,6 @@ def training_validation(
                 len(train_loader),
             ):
                 inputs, labels = to_device(inputs, device), to_device(labels, device)
-
                 optimizer.zero_grad()
 
                 outputs = model(inputs)
@@ -214,7 +203,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1}_{model_type.__name__}_{disease}_.pth"
+                            f"f1_{f1}_{model_type.__name__}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
@@ -235,90 +224,3 @@ def training_validation(
                 f"Epoch [{epoch + 1}], Train loss: {train_loss:.2f}, Validation loss: {val_loss:.2f}, Accuracy: {100 * accuracy:.2f}%, F1-score: {f1:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}"
             )
 
-
-if __name__ == "__main__":
-    device = check_cuda_availability()
-    disease = "Rekurrensparese"
-    file_path = data_path / f"Lists/Vowels_all_{disease}.txt"
-
-    # Hyperparameters
-    num_splits = 5
-    early_stopping_patience = 5
-    batch_size_candidates = [16, 32, 64]
-    window_length_candidates = [20, 30, 40]
-    window_stride_candidates = [5, 10, 15]
-
-    criterion = nn.BCELoss()
-
-    # Set up the model type:
-    #ResNet18
-    # model_type = spec_models[
-    #     get_module_name("ResNet18", "Linear", "Pretrained", "Window", "MultiChannel")
-    # ]
-
-    #SpecNet
-    model_type = spec_models[
-        get_module_name("SpecNetWithSE", "Linear",  "Continuous")
-    ]
-
-    # Start training and validation
-    output_models = []
-
-    augmentation_types = [
-        "pad_zeros",
-        "frequency_masking",
-        "time_masking",
-        "combined_masking",
-        "no_augmentation",
-    ]
-
-    random_states = (7, 69, 420, 2137)
-
-    hyperparameter_combinations = product(augmentation_types, batch_size_candidates)
-
-    if isinstance(model_type, WindowModel):
-        hyperparameter_combinations = product(
-            augmentation_types,
-            batch_size_candidates,
-            window_length_candidates,
-            window_stride_candidates,
-        )
-
-    for hyperparameters in hyperparameter_combinations:
-        if isinstance(model_type, WindowModel):
-            (
-                augmentation_type,
-                batch_size,
-                window_length,
-                window_stride,
-            ) = hyperparameters
-            output_models += list(
-                training_validation(
-                    device,
-                    file_path,
-                    num_splits,
-                    batch_size,
-                    early_stopping_patience,
-                    criterion,
-                    model_type,
-                    augmentation=augmentation_type,
-                    tun_window_size=window_length,
-                    tun_window_stride=window_stride,
-                )
-            )
-        else:
-            augmentation_type, batch_size = hyperparameters
-            output_models += list(
-                training_validation(
-                    device,
-                    file_path,
-                    num_splits,
-                    batch_size,
-                    early_stopping_patience,
-                    criterion,
-                    model_type,
-                    augmentation=augmentation_type,
-                )
-            )
-
-        writer.flush()

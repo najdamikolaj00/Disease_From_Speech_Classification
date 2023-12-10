@@ -258,7 +258,8 @@ spec_models_specnet: dict[str, SpecModelSpec] = {}
 for base_model, model_type, window, single_channel in product(
     ("SpecNet", "SpecNetWithSE"),
     ("LSTM", "Linear"),
-    ("Window", "Continuous")
+    ("Window", "Continuous"),
+    ("SingleChannel", "MultiChannel")
 ):
     model_name = get_module_name_specnet(
         base_model, model_type, window, single_channel
@@ -273,8 +274,8 @@ for base_model, model_type, window, single_channel in product(
         locals()[model_name].model = SpecNetWithSE()
 
     if model_type == "Linear":
-        locals()[model_name].model.fc = nn.Linear(46656, 1)
+        locals()[model_name].model.fc = nn.Linear(59040, 1)
     elif model_type == "LSTM":
-        locals()[model_name].model.fc = nn.LSTM(46656, 1)
+        locals()[model_name].model.fc = nn.LSTM(59040, 1)
 
     spec_models_specnet[model_name] = locals()[model_name]

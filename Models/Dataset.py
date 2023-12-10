@@ -90,6 +90,9 @@ class SpectrogramDataset(Dataset):
         """
         sample_id = list(self.samples.keys())[idx]
         audio_paths = self.samples[sample_id].audio_paths
+        label = self.samples[sample_id].label
+
+        self.samples[sample_id].log_mel_spec_dbs = []
         for audio_path in sorted(audio_paths):
             y, sr = librosa.load(audio_path, sr=None)
 
@@ -117,8 +120,6 @@ class SpectrogramDataset(Dataset):
                 log_mel_spec_db = np.array(pil_tensor)
 
             self.samples[sample_id].log_mel_spec_dbs.append(Tensor(log_mel_spec_db))
-
-        label = self.samples[sample_id].label
 
         return torch.concat(self.samples[sample_id].log_mel_spec_dbs), label
 
