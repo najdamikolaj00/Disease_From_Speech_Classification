@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # Hyperparameters
     num_splits = 5
-    early_stopping_patience = 5
+    early_stopping_patience = 2
     batch_size_candidates = [
         ("batch_size", 16),
         # ("batch_size", 32),
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # ]
 
     # SpecNet
-    model_type = get_model_type(BaseModel.ResNet18, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Continuous,
+    model_type = get_model_type(BaseModel.SpecNet, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Window,
                                 InputChannels.SingleChannel)
 
     # Start training and validation
@@ -48,10 +48,10 @@ if __name__ == "__main__":
 
     augmentation_types = [
         ("augmentation", "pad_zeros"),
-        ("augmentation", "frequency_masking"),
-        ("augmentation", "time_masking"),
-        ("augmentation", "combined_masking"),
-        ("augmentation", "no_augmentation"),
+        # ("augmentation", "frequency_masking"),
+        # ("augmentation", "time_masking"),
+        # ("augmentation", "combined_masking"),
+        # ("augmentation", "no_augmentation"),
     ]
 
     random_states = (7, 69, 420, 2137)

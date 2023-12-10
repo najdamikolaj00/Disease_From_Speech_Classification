@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 from torch import tensor
+from torchvision import transforms
 from torchvision.models import ResNet18_Weights
 
 from Models.ModelOptions import BaseModel, LastLayer, ModelKernel, InputChannels, TrainingOption
@@ -48,7 +49,7 @@ class WindowModel(SpecModel):
                             )
                         )
                     )
-                    windows = forward(windows.to(device))
+                    windows = forward(transforms.Resize((224, 224), antialias=None)(windows).to(device))
                     results[index] = torch.sigmoid(torch.mean(windows))
                 return results.unsqueeze(1).to(device)
 
@@ -59,7 +60,7 @@ class WindowModel(SpecModel):
         return model
 
 
-def _get_model_name(
+def get_model_name(
     base_model: BaseModel,
     last_layer_type: LastLayer,
     pretrained: TrainingOption,
@@ -76,7 +77,7 @@ def get_model_type(base_model: BaseModel,
                    kernel: ModelKernel,
                    input_channel: InputChannels,
                    ) -> SpecModel:
-    model_name = _get_model_name(base_model, last_layer_type, pretrained, kernel, input_channel)
+    model_name = get_model_name(base_model, last_layer_type, pretrained, kernel, input_channel)
     model_type: SpecModel = type(
         model_name, (WindowModel if kernel == ModelKernel.Window else SpecModel,), {}
     )
@@ -90,7 +91,7 @@ def get_model_type(base_model: BaseModel,
         model_type.model = SpecNet()
     elif base_model == BaseModel.SpecNetWithSE:
         model_type.model = SpecNetWithSE()
-    model_output_size = 512 if base_model == BaseModel.ResNet18 else 59040
+    model_output_size = 512 if base_model == BaseModel.ResNet18 else 46656
     if last_layer_type == LastLayer.Linear:
         model_type.model.fc = nn.Linear(model_output_size, 1)
     elif last_layer_type == LastLayer.LSTM:
