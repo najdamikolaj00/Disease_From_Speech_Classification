@@ -10,45 +10,34 @@ from config import data_path, writer
 if __name__ == "__main__":
     device = check_cuda_availability()
     disease = "Rekurrensparese"
-    file_path = data_path / f"Lists/Vowels_a_{disease}.txt"
 
     # Hyperparameters
     num_splits = 5
-    early_stopping_patience = 2
+    early_stopping_patience = 3
     batch_size_candidates = [
         ("batch_size", 16),
         # ("batch_size", 32),
         # ("batch_size", 64),
     ]
     window_length_candidates = [
-        ("window_length", 20),
+        # ("window_length", 20),
         ("window_length", 30),
-        ("window_length", 40),
+        # ("window_length", 40),
     ]
     window_stride_candidates = [
-        ("window_stride", 5),
+        # ("window_stride", 5),
         ("window_stride", 10),
-        ("window_stride", 15),
+        # ("window_stride", 15),
     ]
 
     criterion = nn.BCELoss()
 
-    # Set up the model type:
-    # ResNet18
-    # model_type = spec_models[
-    #     get_module_name("ResNet18", "Linear", "Pretrained", "Window", "MultiChannel")
-    # ]
-
-    # SpecNet
-    model_creator = lambda: get_model_type(BaseModel.SpecNetWithSE, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Window,
-                                InputChannels.SingleChannel)
+    model_creator = lambda: get_model_type(BaseModel.SpecNetWithSE, LastLayer.Linear, TrainingOption.Pretrained,
+                                           ModelKernel.Continuous,
+                                           InputChannels.MultiChannel)
     model_type = model_creator()
 
-    # Start training and validation
-    output_models = []
-
     augmentation_types = [
-        # ("augmentation", "pad_zeros"),
         # ("augmentation", "frequency_masking"),
         ("augmentation", "time_masking"),
         # ("augmentation", "combined_masking"),
@@ -73,16 +62,16 @@ if __name__ == "__main__":
         )
 
     for hyperparameters in hyperparameter_combinations:
-        output_models += list(
-            training_validation(
-                device=device,
-                file_path=file_path,
-                num_splits=num_splits,
-                early_stopping_patience=early_stopping_patience,
-                criterion=criterion,
-                model_creator=model_creator,
-                **dict(hyperparameters)
-            )
-        )
+        file_path = data_path / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}.txt"
+        for model in training_validation(
+            device=device,
+            file_path=file_path,
+            num_splits=num_splits,
+            early_stopping_patience=early_stopping_patience,
+            criterion=criterion,
+            model_creator=model_creator,
+            **dict(hyperparameters)
+        ):
+            del model
 
         writer.flush()

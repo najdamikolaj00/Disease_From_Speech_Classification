@@ -204,7 +204,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1_scores[best_epoch]}_{model_type.__name__}.pth"
+                            f"f1_{f1_scores[best_epoch]}_{model_type.__name__}_{fold}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
