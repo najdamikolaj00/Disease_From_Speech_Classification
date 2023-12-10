@@ -1,5 +1,6 @@
 from itertools import count, chain
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import torch
@@ -30,7 +31,7 @@ def training_validation(
     batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model_type: SpecModel,
+    model_creator: Callable[[], SpecModel],
     augmentation="no_augmentation",
     tun_window_size=35,
     tun_window_stride=10,
@@ -97,6 +98,7 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
+        model_type = model_creator()
         if isinstance(model_type, WindowModel):
             model = model_type.get_model(
                 device, window_size=tun_window_size, window_stride=tun_window_stride

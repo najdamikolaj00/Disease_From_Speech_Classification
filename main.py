@@ -40,16 +40,17 @@ if __name__ == "__main__":
     # ]
 
     # SpecNet
-    model_type = get_model_type(BaseModel.SpecNet, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Window,
+    model_creator = lambda: get_model_type(BaseModel.SpecNetWithSE, LastLayer.Linear, TrainingOption.Pretrained, ModelKernel.Window,
                                 InputChannels.SingleChannel)
+    model_type = model_creator()
 
     # Start training and validation
     output_models = []
 
     augmentation_types = [
-        ("augmentation", "pad_zeros"),
+        # ("augmentation", "pad_zeros"),
         # ("augmentation", "frequency_masking"),
-        # ("augmentation", "time_masking"),
+        ("augmentation", "time_masking"),
         # ("augmentation", "combined_masking"),
         # ("augmentation", "no_augmentation"),
     ]
@@ -79,7 +80,7 @@ if __name__ == "__main__":
                 num_splits=num_splits,
                 early_stopping_patience=early_stopping_patience,
                 criterion=criterion,
-                model_type=model_type,
+                model_creator=model_creator,
                 **dict(hyperparameters)
             )
         )

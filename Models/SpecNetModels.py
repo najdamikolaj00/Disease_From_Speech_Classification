@@ -62,7 +62,6 @@ class SpecNet(nn.Module):
 
         x = self.fc(x)
 
-        x = torch.sigmoid(x)
         return x
 
 
