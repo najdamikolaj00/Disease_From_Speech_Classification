@@ -1,5 +1,6 @@
 from itertools import count, chain
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import torch
@@ -19,8 +20,7 @@ from Evaluation.utilities import (
     to_device,
 )
 from Models import SpectrogramDataset
-# from Models.ResNetModels import spec_models, get_module_name, WindowModel, SpecModel
-from Models.SpecNetModels import WindowModelSpec, SpecModelSpec
+from Models.Models import SpecModel, WindowModel
 from config import data_path, writer, results_folder
 
 
@@ -31,7 +31,7 @@ def training_validation(
     batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model_type: SpecModelSpec,
+    model_creator: Callable[[], SpecModel],
     augmentation="no_augmentation",
     tun_window_size=35,
     tun_window_stride=10,
@@ -98,7 +98,8 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        if isinstance(model_type, WindowModelSpec):
+        model_type = model_creator()
+        if isinstance(model_type, WindowModel):
             model = model_type.get_model(
                 device, window_size=tun_window_size, window_stride=tun_window_stride
             )
@@ -133,7 +134,7 @@ def training_validation(
 
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
+        f1_scores = []
         # Training loop
         for epoch in count():
             model.train()
@@ -203,7 +204,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1}_{model_type.__name__}.pth"
+                            f"f1_{f1_scores[best_epoch]}_{model_type.__name__}_{fold}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
@@ -214,6 +215,7 @@ def training_validation(
                 all_predicted = np.concatenate(all_predicted)
 
                 f1 = f1_score(all_labels, all_predicted, zero_division=0.0)
+                f1_scores.append(f1)
                 precision = precision_score(
                     all_labels, all_predicted, zero_division=0.0
                 )
@@ -223,4 +225,3 @@ def training_validation(
             print(
                 f"Epoch [{epoch + 1}], Train loss: {train_loss:.2f}, Validation loss: {val_loss:.2f}, Accuracy: {100 * accuracy:.2f}%, F1-score: {f1:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}"
             )
-
