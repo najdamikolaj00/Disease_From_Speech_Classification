@@ -32,7 +32,7 @@ def training_validation(
     early_stopping_patience: int,
     criterion: _Loss,
     model_creator: Callable[[], SpecModel],
-    augmentation="no_augmentation",
+    augmentation="pad_zeros",
     tun_window_size=35,
     tun_window_stride=10,
     random_state=42,
