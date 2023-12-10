@@ -1,7 +1,13 @@
 from itertools import product
 
 from torch import nn
-from Models.ModelOptions import BaseModel, LastLayer, ModelKernel, InputChannels, TrainingOption
+from Models.ModelOptions import (
+    BaseModel,
+    LastLayer,
+    ModelKernel,
+    InputChannels,
+    TrainingOption,
+)
 from Evaluation.training_validation import training_validation
 from Evaluation.utilities import check_cuda_availability
 from Models.Models import get_model_type, WindowModel
@@ -32,9 +38,13 @@ if __name__ == "__main__":
 
     criterion = nn.BCELoss()
 
-    model_creator = lambda: get_model_type(BaseModel.SpecNetWithSE, LastLayer.Linear, TrainingOption.Pretrained,
-                                           ModelKernel.Continuous,
-                                           InputChannels.MultiChannel)
+    model_creator = lambda: get_model_type(
+        BaseModel.SpecNetWithSE,
+        LastLayer.Linear,
+        TrainingOption.Pretrained,
+        ModelKernel.Continuous,
+        InputChannels.MultiChannel,
+    )
     model_type = model_creator()
 
     augmentation_types = [
@@ -62,7 +72,10 @@ if __name__ == "__main__":
         )
 
     for hyperparameters in hyperparameter_combinations:
-        file_path = data_path / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}.txt"
+        file_path = (
+            data_path
+            / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}.txt"
+        )
         for model in training_validation(
             device=device,
             file_path=file_path,
@@ -70,7 +83,7 @@ if __name__ == "__main__":
             early_stopping_patience=early_stopping_patience,
             criterion=criterion,
             model_creator=model_creator,
-            **dict(hyperparameters)
+            **dict(hyperparameters),
         ):
             del model
 
