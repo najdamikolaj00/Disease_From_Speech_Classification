@@ -99,6 +99,8 @@ def training_validation(
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
         model_type = model_creator()
+        if any(f'{model_type.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
+            continue
         if isinstance(model_type, WindowModel):
             model = model_type.get_model(
                 device, window_size=tun_window_size, window_stride=tun_window_stride
