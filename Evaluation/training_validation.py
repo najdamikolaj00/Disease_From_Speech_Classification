@@ -1,3 +1,4 @@
+from copy import deepcopy
 from itertools import count, chain
 from pathlib import Path
 from typing import Callable
@@ -201,7 +202,7 @@ def training_validation(
                 val_losses.append(val_loss)
                 best_epoch = np.argmin(val_losses)
                 if best_epoch == epoch:
-                    best_model_weights = model.state_dict()
+                    best_model_weights = deepcopy(model.state_dict())
                 elif epoch - best_epoch > early_stopping_patience:
                     torch.save(
                         best_model_weights,
