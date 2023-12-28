@@ -6,7 +6,6 @@ from Models.ModelOptions import (
     LastLayer,
     ModelKernel,
     InputChannels,
-    TrainingOption,
 )
 from Evaluation.training_validation import training_validation
 from Evaluation.utilities import check_cuda_availability
@@ -39,11 +38,10 @@ if __name__ == "__main__":
 
     criterion = nn.BCELoss()
 
-    for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
+    for kernel, input_channels in product(ModelKernel, InputChannels):
         model_creator = lambda: get_model_type(
-            BaseModel.ResNet18,
+            BaseModel.SpecNetWithSE,
             LastLayer.Linear,
-            training_option,
             kernel,
             input_channels,
         )

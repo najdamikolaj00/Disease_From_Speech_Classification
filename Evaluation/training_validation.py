@@ -98,7 +98,6 @@ def training_validation(
         best_model_weights = None
         val_losses = []
 
-        # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
         model_type = model_creator()
         if any(f'{model_type.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
             continue
@@ -144,7 +143,7 @@ def training_validation(
             total_loss = 0.0
 
             for batch_idx, (inputs, labels) in tqdm(
-                enumerate(train_loader, 0),
+                enumerate(train_loader),
                 f"Training epoch {epoch + 1}...",
                 len(train_loader),
             ):
