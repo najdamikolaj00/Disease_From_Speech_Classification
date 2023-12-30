@@ -1,6 +1,8 @@
 from itertools import product
 
 from torch import nn
+
+from Models.LSTMModel import LSTMModel
 from Models.ModelOptions import (
     BaseModel,
     LastLayer,
@@ -65,7 +67,7 @@ if __name__ == "__main__":
         else:
             hyperparameter_combinations = product(
                 augmentation_types,
-                batch_size_candidates,
+                # batch_size_candidates,
             )
 
         for hyperparameters in hyperparameter_combinations:
@@ -79,7 +81,7 @@ if __name__ == "__main__":
                 num_splits=num_splits,
                 early_stopping_patience=early_stopping_patience,
                 criterion=criterion,
-                model_creator=model_creator,
+                model_creator=LSTMModel,
                 **dict(hyperparameters),
             ):
                 del model

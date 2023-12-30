@@ -10,6 +10,7 @@ import torchaudio.transforms as T
 import torchvision.transforms as transforms
 from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
+from torch import nn
 from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -29,23 +30,21 @@ def training_validation(
     device,
     file_path: Path,
     num_splits: int,
-    batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model_creator: Callable[[], SpecModel],
+    model_creator: Callable[[], nn.Module],
     augmentation="pad_zeros",
     tun_window_size=35,
     tun_window_stride=10,
     random_state=42,
 ):
+    batch_size = 1
     # Load patient IDs and file paths from a file
     patients_ids = get_patients_id(file_path)
     file_paths = get_files_path(file_path)
 
     # Define augmentations
-    transform_no_augmentation = transforms.Compose(
-        [transforms.Resize((224, 224), antialias=None)]
-    )
+    transform_no_augmentation = None
 
     def add_trailing_zeros(x):
         zeros = torch.zeros((*x.shape[:-1], 500))
@@ -57,14 +56,12 @@ def training_validation(
     transform_frequency_masking = transforms.Compose(
         [
             T.FrequencyMasking(freq_mask_param=50),
-            transforms.Resize((224, 224), antialias=None),
         ]
     )
 
     transform_time_masking = transforms.Compose(
         [
             T.TimeMasking(time_mask_param=30),
-            transforms.Resize((224, 224), antialias=None),
         ]
     )
 
@@ -72,7 +69,6 @@ def training_validation(
         [
             T.FrequencyMasking(freq_mask_param=50),
             T.TimeMasking(time_mask_param=30),
-            transforms.Resize((224, 224), antialias=None),
         ]
     )
 
@@ -98,15 +94,9 @@ def training_validation(
         best_model_weights = None
         val_losses = []
 
-        model_type = model_creator()
-        if any(f'{model_type.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
+        model = model_creator()
+        if any(f'{model_creator.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
             continue
-        if isinstance(model_type, WindowModel):
-            model = model_type.get_model(
-                device, window_size=tun_window_size, window_stride=tun_window_stride
-            )
-        else:
-            model = model_type.get_model(device)
 
         optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -206,7 +196,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1_scores[best_epoch]:.2f}_{model_type.__name__}_{augmentation}_{fold}.pth"
+                            f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
