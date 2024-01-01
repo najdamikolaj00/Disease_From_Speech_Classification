@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # random_states = (7, 69, 420, 2137)
     # Hyperparameters
     num_splits = 5
-    early_stopping_patience = 3
+    early_stopping_patience = 30
     batch_size_candidates = [
         ("batch_size", 16),
         # ("batch_size", 32),

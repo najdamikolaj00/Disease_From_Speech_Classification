@@ -95,6 +95,7 @@ def training_validation(
         val_losses = []
 
         model = model_creator()
+        model = model.to(device)
         if any(f'{model_creator.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
             continue
 
@@ -196,7 +197,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}.pth"
+                            f"f1_{f1_scores[best_epoch]:.2f}_{type(model).__name__}_{augmentation}_{fold}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
