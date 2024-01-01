@@ -12,24 +12,25 @@ The human voice holds a vast amount of information beyond its role in communicat
 <h2>
 2. Scientific objective:
 </h2>
-The primary scientific objective of our project is to develop and optimize a neural network-based system for the accurate classification of various pathologies through the analysis of vocal patterns. This involves the following key components:
+The primary scientific objective of our project is to develop and optimize a neural network-based system for the accurate classification of specific pathology through the analysis of vocal patterns. This involves the following key components:
 
 1. Dataset Preprocessing:
   <ul>
-    <li>Gather a diverse and comprehensive dataset encompassing a range of pathologies.</li>
-    <li>Implement preprocessing techniques to extract relevant features from the vocal data, considering utility of spectrograms.</li>
+    <li>Gather a comprehensive dataset.</li>
+    <li>Implement preprocessing techniques to extract relevant features from the vocal data, considering the utility of spectrograms.</li>
   </ul>
 
  2. Neural Network Architecture Design:
   <ul>
     <li>Explore and experiment with different neural network architectures, such as convolutional neural networks (CNNs) to identify the most effective model for pathology classification based on voice analysis.</li>
-    <li>Optimize hyperparameters, including learning rates, layer configurations, and activation functions, to enhance the model's accuracy and generalization capabilities.</li>
+    <li>Optimize layer configurations, and activation functions, to enhance the model's accuracy and generalization capabilities.</li>
   </ul>
 
 3. Training and Validation:
   <ul>
     <li>Train the neural network on the prepared dataset, employing rigorous cross-validation techniques to ensure robust model performance.</li>
     <li>Implement transfer learning strategies, if applicable, to leverage pre-trained models.</li>
+    <li>Data augmentation techniques to enhance model training.</li>
   </ul>
 
 4. Summary
@@ -48,11 +49,11 @@ The primary scientific objective of our project is to develop and optimize a neu
     <li><strong>Laryngitis:</strong> 140 samples</li>
     <li><strong>Rekurrensparese:</strong> 213 samples</li>
   </ul>
-    For this study we have chosen 5 most common pathologies.
+    And many more but for this study we have chosen Rekurrensparese as the most common one.
 
   <h3>Healthy Samples:</h3>
 
-  <p>In addition to the pathological recordings, the dataset includes 657 samples from healthy individuals.</p>
+  <p> Besides the pathological recordings, the dataset includes 657 samples from healthy individuals.</p>
 
   <h3>Subdivision by Speech Elements:</h3>
 
@@ -69,6 +70,15 @@ The primary scientific objective of our project is to develop and optimize a neu
 <div align="center">
     <img src="Images/spec_comparison.jpg" alt="NSpec" style="width: 800px; height: auto; vertical-align: middle; display: inline-block;" />
 </div>
+</div>
+
+<div>
+    <h2>5. Conclusion</h2>
+  <ul>
+    <li>The 'SpecNet (2 layers) + SE' model with augmentation type 'Combined' performed highest, achieving 91.91% accuracy and 0.914 F1-score.</li>
+    <li>Models using the Squeeze-and-Excitation (SE) block were generally suitable for training on such a small dataset.</li>
+    <li>Data augmentation had varying effects on the performance of the models. In some cases it significantly improved the results, while in other cases the effects were less significant or negative.</li>
+  </ul>
 </div>
 
 
