@@ -17,26 +17,6 @@ if __name__ == "__main__":
     device = check_cuda_availability()
     disease = "Rekurrensparese"
 
-    # random_states = (7, 69, 420, 2137)
-    # Hyperparameters
-    num_splits = 5
-    early_stopping_patience = 3
-    batch_size_candidates = [
-        ("batch_size", 16),
-        # ("batch_size", 32),
-        # ("batch_size", 64),
-    ]
-    window_length_candidates = [
-        # ("window_length", 20),
-        ("window_length", 30),
-        # ("window_length", 40),
-    ]
-    window_stride_candidates = [
-        # ("window_stride", 5),
-        ("window_stride", 10),
-        # ("window_stride", 15),
-    ]
-
     criterion = nn.BCELoss()
 
     for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
@@ -73,7 +53,7 @@ if __name__ == "__main__":
         for hyperparameters in hyperparameter_combinations:
             file_path = (
                 data_path
-                / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}.txt"
+                / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}_train.txt"
             )
             for model in training_validation(
                 device=device,
