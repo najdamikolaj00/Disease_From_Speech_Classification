@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     criterion = nn.BCELoss()
 
-    for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
+    for input_channels, kernel, training_option in product(InputChannels, ModelKernel, TrainingOption):
         model_creator = lambda: get_model_type(
             BaseModel.ResNet18,
             LastLayer.Linear,
