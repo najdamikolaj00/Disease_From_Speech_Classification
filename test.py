@@ -1,24 +1,18 @@
 from itertools import product
+from pathlib import Path
 
+import torch
 from torch import nn
-from Models.ModelOptions import (
-    BaseModel,
-    LastLayer,
-    ModelKernel,
-    InputChannels,
-    TrainingOption,
-)
-from Evaluation.training_validation import training_validation
+
+from Evaluation.model_test import test_model
 from Evaluation.utilities import check_cuda_availability
-from Models.Models import get_model_type, WindowModel
-from config import data_path, writer
+from Models.ModelOptions import ModelKernel, TrainingOption, InputChannels, BaseModel, LastLayer
+from Models.Models import get_model_type
+from config import data_path
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     device = check_cuda_availability()
-    disease = "Rekurrensparese"
-
-    criterion = nn.BCELoss()
-
+    disease = 'Rekurrensparese'
     for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
         model_creator = lambda: get_model_type(
             BaseModel.ResNet18,
@@ -28,42 +22,14 @@ if __name__ == "__main__":
             input_channels,
         )
         model_type = model_creator()
+        file_path = (
+            data_path
+            / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}_train.txt"
+        )
+        for model_weighs in Path('Data/results').iterdir():
+            if model_type.__name__ not in model_weighs.name:
+                continue
+            model_type.model.load_state_dict(torch.load(model_weighs))
 
-        augmentation_types = [
-            ("augmentation", "frequency_masking"),
-            ("augmentation", "time_masking"),
-            ("augmentation", "combined_masking"),
-            ("augmentation", "no_augmentation"),
-        ]
+            test_model(device, file_path, model_type.model, nn.BCELoss())
 
-        hyperparameter_combinations = product(augmentation_types, batch_size_candidates)
-
-        if isinstance(model_type, WindowModel):
-            hyperparameter_combinations = product(
-                batch_size_candidates,
-                window_length_candidates,
-                window_stride_candidates,
-            )
-        else:
-            hyperparameter_combinations = product(
-                augmentation_types,
-                batch_size_candidates,
-            )
-
-        for hyperparameters in hyperparameter_combinations:
-            file_path = (
-                data_path
-                / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}_train.txt"
-            )
-            for model in training_validation(
-                device=device,
-                file_path=file_path,
-                num_splits=num_splits,
-                early_stopping_patience=early_stopping_patience,
-                criterion=criterion,
-                model_creator=model_creator,
-                **dict(hyperparameters),
-            ):
-                del model
-
-            writer.flush()

@@ -35,7 +35,7 @@ def to_device(data, device):
 
 
 # Function to get file paths from a text file
-def get_files_path(file_path: Path):
+def get_files_path(file_path: Path) -> list[str]:
     """
     Reads a text file containing a list of file paths and returns a list of
     these file paths.

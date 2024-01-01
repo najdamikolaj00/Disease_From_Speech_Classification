@@ -4,21 +4,22 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.utils.data import DataLoader
 
 from Evaluation.utilities import (
+    get_patients_id,
     get_files_path,
     to_device,
 )
 from Models import SpectrogramDataset
-from config import data_path
 
 
-def test_model(device, file_name, model, criterion):
-    test_files = list(f"{data_path}/{file}" for file in get_files_path(file_name))
+def test_model(device, file_name, model, criterion, batch_size=8):
+    test_patients = get_patients_id(file_name)
+    test_files = get_files_path(file_name)
 
-    transform = transforms.Compose([transforms.Resize((224, 224), antialias=None)])
+    transform = transforms.Compose([
+      transforms.Resize((224, 224), antialias=None)
+    ])
     test_dataset = SpectrogramDataset(test_files, transform)
-    test_loader = DataLoader(
-        test_dataset, shuffle=False, pin_memory=True
-    )
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
     model.eval()
     model.to(device)  # Move model to device
@@ -54,6 +55,8 @@ def test_model(device, file_name, model, criterion):
     precision = precision_score(all_labels, all_predicted, zero_division=0.0)
     recall = recall_score(all_labels, all_predicted, zero_division=0.0)
 
-    print(f"Test Accuracy: {100 * accuracy:.2f}%")
-    print(f"F1-score: {f1:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}")
-    print(f"Average Test Loss: {average_test_loss:.4f}")
+
+    print(f'Test Accuracy: {100 * accuracy:.2f}%')
+    print(f'F1-score: {f1:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}')
+    print(f'Average Test Loss: {average_test_loss:.4f}')
+
