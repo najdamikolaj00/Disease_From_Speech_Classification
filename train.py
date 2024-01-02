@@ -10,7 +10,7 @@ from Models.ModelOptions import (
 )
 from Evaluation.training_validation import training_validation
 from Evaluation.utilities import check_cuda_availability
-from Models.Models import get_model_type, WindowModel
+from Models.Models import get_model
 from config import data_path, writer
 
 if __name__ == "__main__":
@@ -40,15 +40,6 @@ if __name__ == "__main__":
     criterion = nn.BCELoss()
 
     for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
-        model_creator = lambda: get_model_type(
-            BaseModel.ResNet18,
-            LastLayer.Linear,
-            training_option,
-            kernel,
-            input_channels,
-        )
-        model_type = model_creator()
-
         augmentation_types = [
             ("augmentation", "frequency_masking"),
             ("augmentation", "time_masking"),
@@ -58,7 +49,7 @@ if __name__ == "__main__":
 
         hyperparameter_combinations = product(augmentation_types, batch_size_candidates)
 
-        if isinstance(model_type, WindowModel):
+        if kernel == ModelKernel.Window:
             hyperparameter_combinations = product(
                 batch_size_candidates,
                 window_length_candidates,
@@ -71,9 +62,17 @@ if __name__ == "__main__":
             )
 
         for hyperparameters in hyperparameter_combinations:
+            model = get_model(
+                BaseModel.ResNet18,
+                LastLayer.Linear,
+                training_option,
+                kernel,
+                input_channels,
+                *hyperparameters
+            )
             file_path = (
                 data_path
-                / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}_train.txt"
+                / f"Lists/Vowels_a{'ll' if input_channels == InputChannels.MultiChannel else ''}_{disease}_train.txt"
             )
             for model in training_validation(
                 device=device,
@@ -81,7 +80,7 @@ if __name__ == "__main__":
                 num_splits=num_splits,
                 early_stopping_patience=early_stopping_patience,
                 criterion=criterion,
-                model_creator=model_creator,
+                model=model,
                 **dict(hyperparameters),
             ):
                 del model

@@ -1,7 +1,6 @@
 from copy import deepcopy
 from itertools import count, chain
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import torch
@@ -10,6 +9,7 @@ import torchaudio.transforms as T
 import torchvision.transforms as transforms
 from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold
+from torch import nn
 from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -21,7 +21,6 @@ from Evaluation.utilities import (
     to_device,
 )
 from Models import SpectrogramDataset
-from Models.Models import SpecModel, WindowModel
 from config import data_path, writer, results_folder
 
 
@@ -32,10 +31,8 @@ def training_validation(
     batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model_creator: Callable[[], SpecModel],
+    model: nn.Module,
     augmentation="pad_zeros",
-    tun_window_size=35,
-    tun_window_stride=10,
     random_state=42,
 ):
     # Load patient IDs and file paths from a file
@@ -99,15 +96,8 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        model_type = model_creator()
-        if any(f'{model_type.__name__}_{augmentation}_{fold}.pth' in results_file.name for results_file in results_folder.iterdir()):
+        if tuple(results_folder.glob(f'*{model.__name__}_{augmentation}_{fold}.pth')):
             continue
-        if isinstance(model_type, WindowModel):
-            model = model_type.get_model(
-                device, window_size=tun_window_size, window_stride=tun_window_stride
-            )
-        else:
-            model = model_type.get_model(device)
 
         optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -207,7 +197,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1_scores[best_epoch]:.2f}_{model_type.__name__}_{augmentation}_{fold}.pth"
+                            f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)

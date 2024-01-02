@@ -1,3 +1,5 @@
+from typing import Callable
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -16,26 +18,59 @@ from Models.ModelOptions import (
 from Models.SpecNetModels import SpecNet, SpecNetWithSE
 
 
-class SpecModel:
-    model: nn.Module
-
-    @classmethod
-    def get_model(cls, device):
-        def wrapper(forward):
+def update_forward(model_function):
+    def wrapper(*args, **kwargs):
+        def forward_wrapper(forward_function):
             def inner(x):
-                return torch.sigmoid(forward(x))
+                return torch.sigmoid(forward_function(x))
 
             return inner
 
-        cls.model.forward = wrapper(cls.model.forward)
-        model = cls.model.to(device)
+        model = model_function(*args, **kwargs)
+        model.forward = forward_wrapper(model.forward)
         return model
 
+    return wrapper
 
-class WindowModel(SpecModel):
-    @classmethod
-    def get_model(cls, device, window_size=35, window_stride=10):
-        def wrapper(forward):
+
+def set_last_layer(model_function, last_layer: LastLayer, model_output_size: int):
+    def wrapper(*args, **kwargs):
+
+        model = model_function(*args, **kwargs)
+        if last_layer == LastLayer.Linear:
+            model.fc = nn.Linear(model_output_size, 1)
+        elif last_layer == LastLayer.LSTM:
+            model.fc = nn.LSTM(model_output_size, 1)
+        return model
+
+    return wrapper
+
+
+def set_single_channel(model_function):
+    def wrapper(*args, **kwargs):
+        model = model_function(*args, **kwargs)
+        model.conv1 = nn.Conv2d(
+            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+        )
+        return model
+
+    return wrapper
+
+
+def set_multi_channel(model_function):
+    def wrapper(*args, **kwargs):
+        model = model_function(*args, **kwargs)
+        model.conv1 = nn.Conv2d(
+            in_channels=3, out_channels=8, kernel_size=3, stride=1, padding=0
+        )
+        return model
+
+    return wrapper
+
+
+def set_kernel_to_window(model_function: Callable, window_size: int, window_stride: int):
+    def wrapper(*args, **kwargs):
+        def forward_wrapper(forward):
             def inner(x):
                 results = torch.empty(len(x))
                 device = x.device
@@ -48,7 +83,7 @@ class WindowModel(SpecModel):
                     windows = tensor(
                         np.array(
                             tuple(
-                                sample[:, :, i : i + window_size].numpy()
+                                sample[:, :, i: i + window_size].numpy()
                                 for i in range(
                                     0, len(sample[0, -1]) - window_size, window_stride
                                 )
@@ -65,9 +100,11 @@ class WindowModel(SpecModel):
 
             return inner
 
-        cls.model.forward = wrapper(cls.model.forward)
-        model = cls.model.to(device)
+        model = model_function(*args, **kwargs)
+        model.forward = forward_wrapper(model.forward)
         return model
+
+    return wrapper
 
 
 def get_model_name(
@@ -91,43 +128,46 @@ def get_model_name(
     )
 
 
-def get_model_type(
+def get_model(
     base_model: BaseModel,
     last_layer_type: LastLayer,
     pretrained: TrainingOption,
     kernel: ModelKernel,
     input_channel: InputChannels,
-) -> SpecModel:
+    window_size: int = None,
+    window_stride: int = None,
+    *_
+) -> nn.Module:
     model_name = get_model_name(
         base_model, last_layer_type, pretrained, kernel, input_channel
     )
-    model_type: SpecModel = type(
-        model_name, (WindowModel if kernel == ModelKernel.Window else SpecModel,), {}
-    )
+
+    kwargs = {}
     if base_model == BaseModel.ResNet18:
-        model_type.model = models.resnet18(weights=None)
+        kwargs = {"weights": None}
+        model_function = models.resnet18
         if pretrained:
-            model_type.model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
+            kwargs = {"weights": ResNet18_Weights.DEFAULT}
     elif base_model == BaseModel.SpecNet:
-        model_type.model = SpecNet()
+        model_function = SpecNet
     elif base_model == BaseModel.SpecNetWithSE:
-        model_type.model = SpecNetWithSE()
+        model_function = SpecNetWithSE
+    else:
+        raise ValueError
     model_output_size = 512 if base_model == BaseModel.ResNet18 else 46656
-    if last_layer_type == LastLayer.Linear:
-        model_type.model.fc = nn.Linear(model_output_size, 1)
-    elif last_layer_type == LastLayer.LSTM:
-        model_type.model.fc = nn.LSTM(model_output_size, 1)
+    model_function = set_last_layer(model_function, last_layer_type, model_output_size)
     if (
         input_channel == InputChannels.SingleChannel
         and base_model == BaseModel.ResNet18
     ):
-        model_type.model.conv1 = nn.Conv2d(
-            1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
-        )
+        model_function = set_single_channel(model_function)
     elif (
         input_channel == InputChannels.MultiChannel and base_model != BaseModel.ResNet18
     ):
-        model_type.model.conv1 = nn.Conv2d(
-            in_channels=3, out_channels=8, kernel_size=3, stride=1, padding=0
-        )
-    return model_type
+        model_function = set_multi_channel(model_function)
+    model_function = update_forward(model_function)
+    if kernel == ModelKernel.Window:
+        model_function = set_kernel_to_window(model_function, window_size, window_stride)
+    model = model_function(**kwargs)
+    model.__name__ = model_name
+    return model
