@@ -62,7 +62,7 @@ if __name__ == "__main__":
             )
 
         for hyperparameters in hyperparameter_combinations:
-            model = get_model(
+            model_creator = lambda: get_model(
                 BaseModel.ResNet18,
                 LastLayer.Linear,
                 training_option,
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 num_splits=num_splits,
                 early_stopping_patience=early_stopping_patience,
                 criterion=criterion,
-                model=model,
+                model_creator=model_creator,
                 learning_rate=1e-5,
                 **dict(hyperparameters),
             ):

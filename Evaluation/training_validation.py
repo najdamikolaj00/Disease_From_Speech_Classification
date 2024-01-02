@@ -1,6 +1,7 @@
 from copy import deepcopy
 from itertools import count, chain
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import torch
@@ -31,12 +32,11 @@ def training_validation(
     batch_size: int,
     early_stopping_patience: int,
     criterion: _Loss,
-    model: nn.Module,
+    model_creator: Callable[[], nn.Module],
     learning_rate: float,
     augmentation="pad_zeros",
     random_state=42,
 ):
-    model = model.to(device)
     # Load patient IDs and file paths from a file
     patients_ids = get_patients_id(file_path)
     file_paths = get_files_path(file_path)
@@ -94,6 +94,7 @@ def training_validation(
     for fold, (train_idx, val_idx) in enumerate(
         skf.split(patients_ids, [label for _, label in patients_ids])
     ):
+        model = model_creator().to(device)
         best_model_weights = None
         val_losses = []
 
