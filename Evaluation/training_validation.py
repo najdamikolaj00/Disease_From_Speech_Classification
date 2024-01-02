@@ -32,6 +32,7 @@ def training_validation(
     early_stopping_patience: int,
     criterion: _Loss,
     model: nn.Module,
+    learning_rate: float,
     augmentation="pad_zeros",
     random_state=42,
 ):
@@ -97,10 +98,10 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        if tuple(results_folder.glob(f'*{model.__name__}_{augmentation}_{fold}.pth')):
+        if tuple(results_folder.glob(f'*{model.__name__}_{augmentation}_{fold}_{learning_rate}.pth')):
             continue
 
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
         print(f"Fold {fold + 1}/{num_splits}")
 
@@ -198,7 +199,7 @@ def training_validation(
                     torch.save(
                         best_model_weights,
                         results_folder.joinpath(
-                            f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}.pth"
+                            f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}_{learning_rate}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)

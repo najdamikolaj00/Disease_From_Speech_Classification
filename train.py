@@ -81,6 +81,7 @@ if __name__ == "__main__":
                 early_stopping_patience=early_stopping_patience,
                 criterion=criterion,
                 model=model,
+                learning_rate=0.0001,
                 **dict(hyperparameters),
             ):
                 del model
