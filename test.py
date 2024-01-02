@@ -14,22 +14,21 @@ if __name__ == '__main__':
     device = check_cuda_availability()
     disease = 'Rekurrensparese'
     for kernel, training_option, input_channels in product(ModelKernel, TrainingOption, InputChannels):
-        model_creator = lambda: get_model(
+        model = get_model(
             BaseModel.ResNet18,
             LastLayer.Linear,
             training_option,
             kernel,
             input_channels,
         )
-        model_type = model_creator()
         file_path = (
             data_path
-            / f"Lists/Vowels_a{'ll' if 'MultiChannel' in model_type.__name__ else ''}_{disease}_train.txt"
+            / f"Lists/Vowels_a{'ll' if input_channels == InputChannels.MultiChannel else ''}_{disease}_train.txt"
         )
         for model_weighs in Path('Data/results').iterdir():
-            if model_type.__name__ not in model_weighs.name:
+            if model.__name__ not in model_weighs.name:
                 continue
-            model_type.model.load_state_dict(torch.load(model_weighs))
+            model.load_state_dict(torch.load(model_weighs))
 
-            test_model(device, file_path, model_type.model, nn.BCELoss())
+            test_model(device, file_path, model, nn.BCELoss())
 
