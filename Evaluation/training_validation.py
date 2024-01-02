@@ -35,6 +35,7 @@ def training_validation(
     augmentation="pad_zeros",
     random_state=42,
 ):
+    model = model.to(device)
     # Load patient IDs and file paths from a file
     patients_ids = get_patients_id(file_path)
     file_paths = get_files_path(file_path)
