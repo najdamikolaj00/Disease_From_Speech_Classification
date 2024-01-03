@@ -11,19 +11,18 @@ from Models import SpectrogramDataset
 from config import data_path
 
 
-def test_model(device, file_name, model, criterion):
+def test_model(device, file_name, model, batch_size:int = 1):
     test_files = list(f"{data_path}/{file}" for file in get_files_path(file_name))
 
     transform = transforms.Compose([transforms.Resize((224, 224), antialias=None)])
     test_dataset = SpectrogramDataset(test_files, transform)
     test_loader = DataLoader(
-        test_dataset, shuffle=False, pin_memory=True
+        test_dataset, shuffle=False, pin_memory=True, batch_size=batch_size
     )
 
     model.eval()
     model.to(device)  # Move model to device
 
-    test_loss = 0.0
     correct = 0
     total = 0
 
@@ -31,24 +30,18 @@ def test_model(device, file_name, model, criterion):
     all_predicted = []
 
     with torch.no_grad():
-        for data in test_loader:
-            inputs, labels = data
+        for inputs, labels in test_loader:
             inputs, labels = to_device(inputs, device), to_device(labels, device)
 
             outputs = model(inputs)
-            predicted = outputs.round().squeeze()
+            predicted = outputs.round().reshape(batch_size)
 
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
 
-            all_labels.extend(labels.cpu().numpy())
-            all_predicted.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu())
+            all_predicted.extend(predicted.cpu())
 
-            target = labels.float().unsqueeze(1)
-            loss = criterion(outputs, target)
-            test_loss += loss.item()
-
-    average_test_loss = test_loss / len(test_loader)
     accuracy = correct / total
     f1 = f1_score(all_labels, all_predicted, zero_division=0.0)
     precision = precision_score(all_labels, all_predicted, zero_division=0.0)
@@ -56,4 +49,3 @@ def test_model(device, file_name, model, criterion):
 
     print(f"Test Accuracy: {100 * accuracy:.2f}%")
     print(f"F1-score: {f1:.2f}, Precision: {precision:.2f}, Recall: {recall:.2f}")
-    print(f"Average Test Loss: {average_test_loss:.4f}")
