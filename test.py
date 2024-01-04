@@ -1,8 +1,5 @@
 import sys
 from itertools import product
-from pathlib import Path
-
-import torch
 
 from Evaluation.model_test import test_model
 from Evaluation.utilities import check_cuda_availability
@@ -26,8 +23,7 @@ if __name__ == '__main__':
             data_path
             / f"Lists/Vowels_a{'ll' if input_channels == InputChannels.MultiChannel else ''}_{disease}_test.txt"
         )
-        for model_weighs in Path('Data/results').iterdir():
-            test_model(device, file_path, model)
-            sys.stdout.flush()
+        test_model(device, file_path, model)
+        sys.stdout.flush()
     sys.stdout.close()
 
