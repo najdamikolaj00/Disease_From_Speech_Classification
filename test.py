@@ -27,10 +27,6 @@ if __name__ == '__main__':
             / f"Lists/Vowels_a{'ll' if input_channels == InputChannels.MultiChannel else ''}_{disease}_test.txt"
         )
         for model_weighs in Path('Data/results').iterdir():
-            if model.__name__ not in model_weighs.name:
-                continue
-            print(model.__name__)
-            model.load_state_dict(torch.load(model_weighs, map_location=device))
             test_model(device, file_path, model)
             sys.stdout.flush()
     sys.stdout.close()
