@@ -15,6 +15,7 @@ from torch.nn.modules.loss import _Loss
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from Config import Config
 from Evaluation.utilities import (
     get_patients_id,
     get_files_path,
@@ -22,7 +23,6 @@ from Evaluation.utilities import (
     to_device,
 )
 from Models import SpectrogramDataset
-from config import data_path, writer, results_folder
 
 
 def training_validation(
@@ -99,7 +99,11 @@ def training_validation(
         val_losses = []
 
         # ResNet18 https://discuss.pytorch.org/t/altering-resnet18-for-single-channel-images/29198/6
-        if tuple(results_folder.glob(f'*{model.__name__}_{augmentation}_{fold}_{learning_rate}.pth')):
+        if tuple(
+            Config.results_folder.glob(
+                f"*{model.__name__}_{augmentation}_{fold}_{learning_rate}.pth"
+            )
+        ):
             continue
 
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -112,15 +116,15 @@ def training_validation(
 
         train_files = list(
             chain.from_iterable(
-                [f"{data_path}/{file}"]
+                [f"{Config.data_path}/{file}"]
                 if file.endswith("0")
-                else 4 * [f"{data_path}/{file}"]
+                else 4 * [f"{Config.data_path}/{file}"]
                 for file in file_paths
                 if get_patient_id(file)[0] in train_patients[:, 0]
             )
         )
         val_files = [
-            f"{data_path}/{file}"
+            f"{Config.data_path}/{file}"
             for file in file_paths
             if get_patient_id(file)[0] in val_patients[:, 0]
         ]
@@ -137,7 +141,7 @@ def training_validation(
             total_loss = 0.0
 
             for batch_idx, (inputs, labels) in tqdm(
-                enumerate(train_loader, 0),
+                enumerate(train_loader),
                 f"Training epoch {epoch + 1}...",
                 len(train_loader),
             ):
@@ -154,7 +158,6 @@ def training_validation(
                 total_loss += loss.item()
 
             train_loss = total_loss / len(train_loader)
-            writer.add_scalar("Loss/train", train_loss, epoch)
 
             model.eval()
             correct = 0
@@ -191,7 +194,6 @@ def training_validation(
                     val_loss += loss.item()
 
                 val_loss /= len(val_loader)
-                writer.add_scalar("Loss/validation", val_loss, epoch)
                 val_losses.append(val_loss)
                 best_epoch = np.argmin(val_losses)
                 if best_epoch == epoch:
@@ -199,13 +201,12 @@ def training_validation(
                 elif epoch - best_epoch > early_stopping_patience:
                     torch.save(
                         best_model_weights,
-                        results_folder.joinpath(
+                        Config.results_folder.joinpath(
                             f"f1_{f1_scores[best_epoch]:.2f}_{model.__name__}_{augmentation}_{fold}_{learning_rate}.pth"
                         ),
                     )
                     model.load_state_dict(best_model_weights)
-                    yield model
-                    break
+                    return model
 
                 all_labels = np.concatenate(all_labels)
                 all_predicted = np.concatenate(all_predicted)

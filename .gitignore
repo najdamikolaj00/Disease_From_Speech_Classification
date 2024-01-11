@@ -3,3 +3,4 @@ __pycache__
 .venv
 Data
 /list_construction.py
+/read_results.py
