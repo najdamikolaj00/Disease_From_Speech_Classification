@@ -6,10 +6,23 @@ from typing import Literal
 from Config import Config
 
 
-def create_single_vowel_set(rek_data_path: Path, health_data_path: Path, vowel: Literal['a', 'i', 'u']):
+def create_single_vowel_set(
+    rek_data_path: Path, health_data_path: Path, vowel: Literal["a", "i", "u"]
+):
     (Config.lists_path / f"Vowels_{vowel}_{Config.disease}.txt").write_text(
         "\n".join(
-            chain.from_iterable(((f"Vowels/{Config.disease}/{path.name} 1" for path in rek_data_path.glob(f"*_{vowel}.wav")), (f"Vowels/Healthy/{path.name} 0" for path in health_data_path.glob(f"*_{vowel}.wav"))))
+            chain.from_iterable(
+                (
+                    (
+                        f"Vowels/{Config.disease}/{path.name} 1"
+                        for path in rek_data_path.glob(f"*_{vowel}.wav")
+                    ),
+                    (
+                        f"Vowels/Healthy/{path.name} 0"
+                        for path in health_data_path.glob(f"*_{vowel}.wav")
+                    ),
+                )
+            )
         )
     )
 
@@ -47,7 +60,18 @@ def create_multi_vowel_set(diseased_data_path: Path, health_data_path: Path):
     )
     (Config.lists_path / f"Vowels_all_{Config.disease}.txt").write_text(
         "\n".join(
-            chain.from_iterable(((f"Vowels/{Config.disease}/{path.name} 1" for path in train_recordings_disease), (f"Vowels/Healthy/{path.name} 0" for path in train_recordings_healthy)))
+            chain.from_iterable(
+                (
+                    (
+                        f"Vowels/{Config.disease}/{path.name} 1"
+                        for path in train_recordings_disease
+                    ),
+                    (
+                        f"Vowels/Healthy/{path.name} 0"
+                        for path in train_recordings_healthy
+                    ),
+                )
+            )
         )
     )
 
@@ -55,7 +79,7 @@ def create_multi_vowel_set(diseased_data_path: Path, health_data_path: Path):
 def main():
     rek_data_path = Config.root_path / f"Data/Vowels/{Config.disease}"
     health_data_path = Path("Data/Vowels/Healthy")
-    for vowel in ('a', 'i', 'u'):
+    for vowel in ("a", "i", "u"):
         create_single_vowel_set(rek_data_path, health_data_path, vowel)
     create_multi_vowel_set(rek_data_path, health_data_path)
 

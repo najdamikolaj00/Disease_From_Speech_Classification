@@ -149,7 +149,6 @@ def training_validation(
                 optimizer.zero_grad()
 
                 outputs = model(inputs)
-                # print(outputs)
                 target = labels.float().unsqueeze(1)
                 loss = criterion(outputs, target)
                 loss.backward()

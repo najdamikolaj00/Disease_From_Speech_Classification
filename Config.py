@@ -1,6 +1,8 @@
 import random
+from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
+from typing import NamedTuple, Literal
 
 import numpy as np
 import torch
@@ -30,3 +32,9 @@ class Config:
 torch.manual_seed(Config.random_state)
 np.random.seed(Config.random_state)
 random.seed(Config.random_state)
+
+
+class WindowParameters(NamedTuple):
+    is_window: Literal[True] = True
+    window_size: int = 40
+    window_stride: int = 10
