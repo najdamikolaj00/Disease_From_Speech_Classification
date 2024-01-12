@@ -34,7 +34,7 @@ def training_validation(
     criterion: _Loss,
     model_creator: Callable[[], nn.Module],
     learning_rate: float,
-    augmentation="pad_zeros",
+    augmentation: str,
     random_state=42,
 ):
     # Load patient IDs and file paths from a file

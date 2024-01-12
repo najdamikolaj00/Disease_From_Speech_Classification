@@ -11,12 +11,7 @@ if __name__ == "__main__":
     for window_arguments, many_channels, augmentation in chain.from_iterable(
         (
             product(
-                (WindowParameters(is_window=True),),
-                (False, True),
-                ("pad_zeros",),
-            ),
-            product(
-                ((WindowParameters(is_window=False),),),
+                (WindowParameters(use_window=False),),
                 (False, True),
                 (
                     "frequency_masking",
@@ -25,6 +20,11 @@ if __name__ == "__main__":
                     "no_augmentation",
                 ),
             ),
+            product(
+                (WindowParameters(use_window=True, window_size=40, window_stride=10),),
+                (False, True),
+                ("pad_zeros",),
+            ),
         )
     ):
         model_creation_function = adjust(
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         )
         file_path = (
             Config.lists_path
-            / f'Vowels_a{"ll" if many_channels else ""}_{Config.disease}.txt'
+            / f'Vowels_{"all" if many_channels else Config.vowel}_{Config.disease}.txt'
         )
         training_validation(
             device=device,

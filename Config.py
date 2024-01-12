@@ -10,6 +10,7 @@ from torchvision import models
 
 
 class Config:
+    vowel = "a"
     disease = "Rekurrensparese"
     base_model = models.resnet18
     criterion = nn.BCELoss()
@@ -34,6 +35,6 @@ random.seed(Config.random_state)
 
 
 class WindowParameters(NamedTuple):
-    is_window: bool = True
+    use_window: bool = True
     window_size: int = 40
     window_stride: int = 10
