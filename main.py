@@ -11,12 +11,12 @@ if __name__ == "__main__":
     for window_arguments, many_channels, augmentation in chain.from_iterable(
         (
             product(
-                (WindowParameters(),),
+                (WindowParameters(is_window=True),),
                 (False, True),
                 ("pad_zeros",),
             ),
             product(
-                ((False,),),
+                ((WindowParameters(is_window=False),),),
                 (False, True),
                 (
                     "frequency_masking",
